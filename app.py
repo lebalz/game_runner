@@ -100,7 +100,7 @@ def unzip(zip_file: Path):
 CONNECTOR_REGEX = re.compile(r'Connector\(.*?\)')
 
 
-def _start_game(target: str, device_id: str):
+def _start_game(target: str, device_id: str, debug: bool = False):
     target = Path(target)
     file = Path(__file__).parent.joinpath('running_games', f'{device_id}.py')
     shutil.copyfile(target, file)
@@ -112,7 +112,10 @@ def _start_game(target: str, device_id: str):
         f.write(new_text)
 
     print('now running', file)
-    os.system(f'venv/bin/python {str(file)}')
+    if debug:
+        os.system(f'venv/bin/python {str(file)}')
+    else:
+        os.system(f'/app/.heroku/python/bin/python {str(file)}')
 
 
 def start_game(target: Path) -> str:
@@ -120,7 +123,7 @@ def start_game(target: Path) -> str:
     if device_id in active_games:
         active_games[device_id].kill()
     ctx = mp.get_context('spawn')
-    p = ctx.Process(target=_start_game, args=(str(target), device_id))
+    p = ctx.Process(target=_start_game, args=(str(target), device_id, app.debug))
     p.start()
     active_games[device_id] = p
     return device_id
