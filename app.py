@@ -48,7 +48,6 @@ def hello_world():
 def index():
     games = list(map(lambda d: d.name, filter(
         lambda d: d.is_dir and not d.name.startswith('.'), root.joinpath('uploads').iterdir())))
-    # games = list(map(lambda d: d.name, root.joinpath('uploads').glob()))
     return render_template('index.html', games=games)
 
 
