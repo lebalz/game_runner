@@ -1,0 +1,10 @@
+<!doctype html>
+<title>Hello from Flask</title>
+
+<h1>Games</h1>
+<ul>
+
+    {% for game in games %}
+    <li><a href="/game?game={{game}}">{{game}}</a></li>
+    {% endfor %}
+</ul>
