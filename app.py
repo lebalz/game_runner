@@ -26,9 +26,10 @@ def on_client_devices(devices: List[Device]):
     for rm in removed:
         active_clients.remove(rm)
         if rm in active_games:
-            process = os.popen(f'ps ax | grep {rm}.py').read()
-            pid = process.split(' ')[0]
-            os.system(f'kill -9 {pid}')
+            processes = os.popen(f'/bin/ps ax | grep {rm}.py').read()
+            for process in processes.splitlines():
+                pid = process.split(' ')[0]
+                os.system(f'/bin/kill -9 {pid}')
             del active_games[rm]
             file = root.joinpath('running_games', f'{rm}.py')
             os.remove(file)
