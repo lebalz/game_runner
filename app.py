@@ -28,8 +28,10 @@ def on_client_devices(devices: List[Device]):
         if rm in active_games:
             processes = os.popen(f'/bin/ps ax | grep {rm}.py').read()
             for process in processes.splitlines():
-                pid = process.split(' ')[0]
-                os.system(f'/bin/kill -9 {pid}')
+                pid = process.strip().split(' ')[0]
+                if pid:
+                    print(f'/bin/kill -9 {pid}')
+                    os.system(f'/bin/kill -9 {pid}')
             del active_games[rm]
             file = root.joinpath('running_games', f'{rm}.py')
             os.remove(file)
