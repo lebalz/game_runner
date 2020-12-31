@@ -12,9 +12,6 @@ from smartphone_connector import Connector
 from smartphone_connector.types import Device
 
 root = Path(__file__).parent
-with open('out.txt', 'w+') as f:
-    f.write(__name__)
-    f.write('\n')
 app = Flask(__name__)
 
 active_clients: set = set()
