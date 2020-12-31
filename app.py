@@ -67,7 +67,8 @@ def game():
             return redirect('/index')
         target = target_dir.joinpath('game.py')
     device_id = start_game(target)
-    return render_template('game.html', device_id=device_id)
+    return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
+    # return render_template('game.html', device_id=device_id)
 
 
 @app.route('/upload_game', methods=['GET', 'POST'])
@@ -134,5 +135,5 @@ def start_game(target: Path) -> str:
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
-    port = int(os.environ.get('PORT', 3000))
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='localhost', port=port, debug=True)
