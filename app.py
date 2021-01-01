@@ -13,6 +13,8 @@ from smartphone_connector.types import Device
 
 root = Path(__file__).parent
 app = Flask(__name__)
+# 16MB upper limit
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 active_clients: set = set()
 active_games: dict = {}
