@@ -27,7 +27,7 @@ def is_process_running(pid: Union[str, int]) -> bool:
 
 
 def kill_game(device_id: str):
-    if not root.joinpath('running_games', f'game-{device_id}.py').exists():
+    if not root.joinpath('running_games', f'{device_id}.py').exists():
         return
     root.joinpath('running_games', f'{device_id}.kill').touch()
 
