@@ -1,7 +1,7 @@
 import shutil
 import multiprocessing as mp
 import os
-from typing import List
+from typing import List, Union
 from flask import Flask, request, render_template, redirect
 from pathlib import Path
 from zipfile import ZipFile
@@ -16,30 +16,64 @@ app = Flask(__name__)
 
 active_clients: set = set()
 active_games: dict = {}
+socket_conn: Connector = None
+
+GREP_REGEX = re.compile(r'\bgrep\b')
+
+
+def is_process_running(pid: Union[str, int]) -> bool:
+    processes = os.popen(f'/bin/ps -p {pid}').read()
+    return len(list(filter(lambda l: l.strip().startswith(str(pid)), processes.splitlines())))
+
+
+def kill_game(device_id: str):
+    if not root.joinpath('running_games', f'game-{device_id}.py').exists():
+        return
+    root.joinpath('running_games', f'{device_id}.kill').touch()
+
+    if device_id in active_games:
+        active_games[device_id]['process'].join(5)
+        if not active_games[device_id]['process'].is_alive():
+
+            if root.joinpath('running_games', f'{device_id}.kill').exists():
+                os.remove(root.joinpath('running_games', f'{device_id}.kill'))
+            print(f'killed {device_id}')
+            active_games[device_id]['process'].close()
+
+            del active_games[device_id]
+            file = root.joinpath('running_games', f'{device_id}.py')
+            if file.exists():
+                os.remove(file)
+        else:
+            print('could not kill process: ', device_id)
 
 
 def on_client_devices(devices: List[Device]):
+    print(os.getpid(), 'devices!')
     clients = set(map(lambda d: d['device_id'], filter(lambda d: d['is_client'], devices)))
     removed = active_clients - clients
     new = clients - active_clients
     active_clients.update(new)
     for rm in removed:
+        print('kill', rm, active_games.keys())
         active_clients.remove(rm)
-        if rm in active_games:
-            processes = os.popen(f'/bin/ps ax | grep {rm}.py').read()
-            for process in processes.splitlines():
-                pid = process.strip().split(' ')[0]
-                if pid:
-                    print(f'/bin/kill -9 {pid}')
-                    os.system(f'/bin/kill -9 {pid}')
-            del active_games[rm]
-            file = root.joinpath('running_games', f'{rm}.py')
-            os.remove(file)
+        kill_game(rm)
 
 
-app.logger.info(f'connect to {__name__}')
-socket_conn = Connector('https://io.gbsl.website', '__GAME_RUNNER__')
-socket_conn.on_devices = on_client_devices
+def setup(force: bool = False):
+    global socket_conn
+    print('pid: ', os.getpid())
+    if root.joinpath('running').exists():
+        with open(root.joinpath('running'), 'r') as f:
+            current_pid = f.read().strip()
+            if is_process_running(current_pid) and not force:
+                return
+
+    app.logger.info(f'connect to {__name__}')
+    with open(root.joinpath('running'), 'w') as f:
+        f.write(str(os.getpid()))
+    socket_conn = Connector('https://io.gbsl.website', '__GAME_RUNNER__')
+    socket_conn.on_devices = on_client_devices
 
 
 @app.route('/')
@@ -68,7 +102,6 @@ def game():
         target = target_dir.joinpath('game.py')
     device_id = start_game(target)
     return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
-    # return render_template('game.html', device_id=device_id)
 
 
 @app.route('/upload_game', methods=['GET', 'POST'])
@@ -102,21 +135,54 @@ def unzip(zip_file: Path):
 
 
 CONNECTOR_REGEX = re.compile(r'Connector\(.*?\)')
+CONNECTOR_NAME_REGEX = re.compile(r'(?P<indent>\s*)(?P<var_name>\b\S+\b)\s*=\s*Connector\(.*?\)')
 
 
-def _start_game(target: str, device_id: str, debug: bool = False):
+def _start_game(target: str, device_id: str):
     target = Path(target)
     file = Path(__file__).parent.joinpath('running_games', f'{device_id}.py')
     shutil.copyfile(target, file)
 
     with open(file, 'r') as f:
-        new_text = CONNECTOR_REGEX.sub(f'Connector("https://io.gbsl.website", "{device_id}")', f.read())
-    print('\n'.join(new_text.splitlines()[:10]))
-    with open(file, 'w') as f:
-        f.write(new_text)
+        raw = f.read()
+        match = CONNECTOR_NAME_REGEX.search(raw)
+        if match:
+            indent = match['indent']
+            var_name = match['var_name']
+            replacement = f'''
+from pathlib import Path
+import os
+{indent}{var_name} = Connector("https://io.gbsl.website", "{device_id}")
+
+def __shutdown():
+    {var_name}.disconnect()
+    if Path(__file__).parent.joinpath('{device_id}.kill').exists():
+        os.remove(Path(__file__).parent.joinpath('{device_id}.kill'))
+    exit()
+
+def __check_running_state():
+    if Path(__file__).parent.joinpath('{device_id}.kill').exists():
+        __shutdown()
+
+{var_name}.subscribe_async(__check_running_state, 1)
+
+'''
+            new_text = CONNECTOR_NAME_REGEX.sub(replacement, raw)
+            cancel_subscriptions_regex = re.compile(f'(?P<indent>\s*){var_name}.cancel_async_subscriptions\(\)')
+            new_text = cancel_subscriptions_regex.sub(
+                f'''\
+\g<indent>{var_name}.cancel_async_subscriptions()
+\g<indent>{var_name}.subscribe_async(__check_running_state, 1)
+''',
+                new_text
+            )
+            with open(file, 'w') as f:
+                f.write(new_text)
+        else:
+            return
 
     print('now running', file)
-    if debug:
+    if Path('venv/bin/python').exists():
         os.system(f'venv/bin/python {str(file)}')
     else:
         os.system(f'/app/.heroku/python/bin/python {str(file)}')
@@ -125,14 +191,18 @@ def _start_game(target: str, device_id: str, debug: bool = False):
 def start_game(target: Path) -> str:
     device_id = f'game-{time.time_ns()}'
     if device_id in active_games:
-        active_games[device_id].kill()
+        kill_game(device_id)
     ctx = mp.get_context('spawn')
-    p = ctx.Process(target=_start_game, args=(str(target), device_id, app.debug))
+    p = ctx.Process(target=_start_game, args=(str(target), device_id))
     p.start()
-    active_games[device_id] = p
+    active_games[device_id] = {
+        'process': p,
+        'created': time.time()
+    }
     return device_id
 
 
+setup()
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
