@@ -4,3 +4,4 @@ running_games/
 __pycache__
 .DS_Store
 running
+.env
