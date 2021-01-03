@@ -6,3 +6,4 @@ python-engineio==3.13.2
 gunicorn==20.0.4
 Flask==1.1.2
 requests==2.25.1
+python-dotenv==0.15.0
