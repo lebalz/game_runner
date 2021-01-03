@@ -32,7 +32,7 @@ def home_dir() -> Path:
 
 def create_game(target: Path, device_id: str) -> Path:
     home = home_dir()
-    file = home.joinpath(f'{device_id}.py')
+    file = home.joinpath('.running_games', f'{device_id}.py')
     pw = pwd.getpwnam(game_runner())
     shutil.copyfile(target, file)
 
