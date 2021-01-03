@@ -1,0 +1,7 @@
+{
+    "scripts": {
+        "dokku": {
+            "predeploy": "useradd -m game_runner -p asdfasdf"
+        }
+    }
+}
