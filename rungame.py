@@ -14,18 +14,19 @@ CONNECTOR_NAME_REGEX = re.compile(r'(?P<indent>\s*)(?P<var_name>\b\S+\b)\s*=\s*C
 DEFAULT_GAME_RUNNER = 'game_runner'
 DEFAULT_GAME_RUNNER_PW = 'asdfasdf'
 
+
 def game_runner() -> str:
     return os.getenv('GAME_RUNNER', DEFAULT_GAME_RUNNER)
 
 
 def home_dir() -> Path:
-    game_runner = os.getenv('GAME_RUNNER', DEFAULT_GAME_RUNNER)
+    name = os.getenv('GAME_RUNNER', DEFAULT_GAME_RUNNER)
     try:
-        pwd.getpwnam(game_runner)
+        pwd.getpwnam(name)
     except KeyError:
         game_runner_pw = os.getenv('GAME_RUNNER_PW', DEFAULT_GAME_RUNNER_PW)
-        os.system(f'useradd -m {game_runner} -p {game_runner_pw}')
-    pw = pwd.getpwnam(game_runner)
+        os.system(f'useradd -m {name} -p {game_runner_pw}')
+    pw = pwd.getpwnam(name)
     return Path(pw.pw_dir)
 
 
