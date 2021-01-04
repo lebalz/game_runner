@@ -10,7 +10,14 @@ inotifywait -m /home/game_runner/.running_games -e create -e moved_to |
         else
             if [[ $file == *.kill ]]
             then
-                echo "kill python file $file"
+                game=${file%%.*}
+                pid=$(cat "/home/game_runner/$file.pid")
+                ppid=$(ps -o ppid= -p $pid)
+                kill $ppid
+                kill $pid
+                rm $path$game.project
+                rm $path$game.py
+                rm /home/game_runner/$game
             fi
         fi
     done
