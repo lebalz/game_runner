@@ -172,8 +172,8 @@ def start_game(target: Path) -> str:
     return device_id
 
 
+setup()
 if __name__ == '__main__':
-    setup()
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
     app.run(host='localhost', port=port, debug=True)
