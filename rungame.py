@@ -34,9 +34,10 @@ def create_game(target: Path, device_id: str) -> Path:
     home = home_dir()
     file = home.joinpath('.running_games', f'{device_id}.py')
     pw = pwd.getpwnam(game_runner())
-    shutil.copyfile(target, file)
-    with open(file, 'r') as f:
+    with open(target, 'r') as f:
         raw = f.read()
+    with open(home.joinpath('.running_games', f'{device_id}.project'), 'w') as f:
+        f.write(target.parent.name)
 
     match = CONNECTOR_NAME_REGEX.search(raw)
     if match:
@@ -45,6 +46,8 @@ def create_game(target: Path, device_id: str) -> Path:
         replacement = f'''
 from pathlib import Path
 import os
+with open('/home/{game_runner()}/{device_id}.kill.pid', 'w') as f:
+    f.write(str(os.getpid()))
 {indent}{var_name} = Connector("https://io.gbsl.website", "{device_id}")
 
 def __shutdown():

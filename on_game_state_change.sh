@@ -4,7 +4,9 @@ inotifywait -m /home/game_runner/.running_games -e create -e moved_to |
         echo "got new file: $action, $path, $file"
         if [[ $file == *.py ]]
         then
-            echo "run python file $file"
+            game=${file%%.*}
+            project=$(cat "$path$game.project")
+            /bin/su -s /bin/bash -c "(cd /app/uploads/$project && /app/.heroku/python/bin/python3 $path$file &)" game_runner
         else
             if [[ $file == *.kill ]]
             then
