@@ -35,14 +35,14 @@ def create_game(target: Path, device_id: str) -> Path:
     file = home.joinpath('.running_games', f'{device_id}.py')
     pw = pwd.getpwnam(game_runner())
     shutil.copyfile(target, file)
-
     with open(file, 'r') as f:
         raw = f.read()
-        match = CONNECTOR_NAME_REGEX.search(raw)
-        if match:
-            indent = match['indent']
-            var_name = match['var_name']
-            replacement = f'''
+
+    match = CONNECTOR_NAME_REGEX.search(raw)
+    if match:
+        indent = match['indent']
+        var_name = match['var_name']
+        replacement = f'''
 from pathlib import Path
 import os
 {indent}{var_name} = Connector("https://io.gbsl.website", "{device_id}")
@@ -61,24 +61,24 @@ def __check_running_state():
 {var_name}.subscribe_async(__check_running_state, 1)
 
 '''
-            new_text = CONNECTOR_NAME_REGEX.sub(replacement, raw)
-            cancel_subscriptions_regex = re.compile(f'(?P<indent>\s*){var_name}.cancel_async_subscriptions\(\)')
-            new_text = cancel_subscriptions_regex.sub(
-                f'''\
+        new_text = CONNECTOR_NAME_REGEX.sub(replacement, raw)
+        cancel_subscriptions_regex = re.compile(f'(?P<indent>\s*){var_name}.cancel_async_subscriptions\(\)')
+        new_text = cancel_subscriptions_regex.sub(
+            f'''\
 \g<indent>{var_name}.cancel_async_subscriptions()
 \g<indent>{var_name}.subscribe_async(__check_running_state, 1)
 ''',
-                new_text
-            )
-            with open(file, 'w') as f:
-                f.write(new_text)
-        else:
-            return
+            new_text
+        )
+        with open(file, 'w') as f:
+            f.write(new_text)
+    else:
+        return
 
     # restrict permission for scripts to read only
-    os.chmod(file, 444)
-    os.setgid(pw.pw_gid)
-    os.setuid(pw.pw_uid)
+    # os.chmod(file, 444)
+    # os.setgid(pw.pw_gid)
+    # os.setuid(pw.pw_uid)
     return file
 
 

@@ -36,21 +36,21 @@ def kill_game(device_id: str):
         return
     home.joinpath(f'{device_id}.kill').touch()
 
-    if device_id in active_games:
-        active_games[device_id]['process'].join(5)
-        if not active_games[device_id]['process'].is_alive():
+    # if device_id in active_games:
+    #     active_games[device_id]['process'].join(5)
+    #     if not active_games[device_id]['process'].is_alive():
 
-            if home.joinpath(f'{device_id}.kill').exists():
-                os.remove(home.joinpath(f'{device_id}.kill'))
-            print(f'killed {device_id}')
-            active_games[device_id]['process'].close()
+    #         if home.joinpath(f'{device_id}.kill').exists():
+    #             os.remove(home.joinpath(f'{device_id}.kill'))
+    #         print(f'killed {device_id}')
+    #         active_games[device_id]['process'].close()
 
-            del active_games[device_id]
-            file = home.joinpath(f'{device_id}.py')
-            if file.exists():
-                os.remove(file)
-        else:
-            print('could not kill process: ', device_id)
+    #         del active_games[device_id]
+    #         file = home.joinpath(f'{device_id}.py')
+    #         if file.exists():
+    #             os.remove(file)
+    #     else:
+    #         print('could not kill process: ', device_id)
 
 
 def on_client_devices(devices: List[Device]):
@@ -150,10 +150,10 @@ def _start_game(target: str, device_id: str):
 
     target = Path(target)
     file = create_game(target, device_id)
-    if root.joinpath('venv/bin/python').exists():
-        run(root.joinpath('venv/bin/python'), file, target.parent)
-    else:
-        run(Path('/app/.heroku/python/bin/python'), file, target.parent)
+    # if root.joinpath('venv/bin/python').exists():
+    #     run(root.joinpath('venv/bin/python'), file, target.parent)
+    # else:
+    #     run(Path('/app/.heroku/python/bin/python'), file, target.parent)
 
 
 def start_game(target: Path) -> str:
@@ -161,13 +161,14 @@ def start_game(target: Path) -> str:
     device_id = f'game-{time.time_ns()}'
     if device_id in active_games:
         kill_game(device_id)
-    ctx = mp.get_context('spawn')
-    p = ctx.Process(target=_start_game, args=(str(target), device_id))
-    p.start()
-    active_games[device_id] = {
-        'process': p,
-        'created': time.time()
-    }
+    _start_game(target, device_id)
+    # ctx = mp.get_context('spawn')
+    # p = ctx.Process(target=_start_game, args=(str(target), device_id))
+    # p.start()
+    # active_games[device_id] = {
+    #     'process': p,
+    #     'created': time.time()
+    # }
     return device_id
 
 

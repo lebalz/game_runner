@@ -1,7 +1,7 @@
 {
     "scripts": {
         "dokku": {
-            "predeploy": "useradd -m game_runner -p asdfasdf && mkdir /home/game_runner/.running_games && chown herokuishuser:herokuishuser /home/game_runner/.running_games"
+            "predeploy": "/bin/bash -e /app/dokku_predeploy.sh"
         }
     }
 }
