@@ -1,7 +1,8 @@
 {
     "scripts": {
         "dokku": {
-            "predeploy": "/bin/bash -e /app/dokku_predeploy.sh"
+            "predeploy": "/bin/bash -e /app/dokku_predeploy.sh",
+            "postdeploy": "nohup /bin/bash /app/on_game_state_change.sh > /home/game_runner/run_state.log 2>&1"
         }
     }
 }
