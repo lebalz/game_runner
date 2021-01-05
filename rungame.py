@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import re
-import shutil
-import sys
 import pwd
 import os
 from pathlib import Path
@@ -33,7 +31,6 @@ def home_dir() -> Path:
 def create_game(target: Path, device_id: str) -> Path:
     home = home_dir()
     file = home.joinpath('.running_games', f'{device_id}.py')
-    pw = pwd.getpwnam(game_runner())
     with open(target, 'r') as f:
         raw = f.read()
     with open(home.joinpath('.running_games', f'{device_id}.project'), 'w') as f:
@@ -78,12 +75,4 @@ def __check_running_state():
     else:
         return
 
-    # restrict permission for scripts to read only
-    # os.chmod(file, 444)
-    # os.setgid(pw.pw_gid)
-    # os.setuid(pw.pw_uid)
     return file
-
-
-def run(python: Path, game: Path, project_dir: Path):
-    os.system(f'(cd {project_dir} && {python} {game})')

@@ -1,6 +1,5 @@
-from rungame import create_game, game_runner, home_dir, run
+from rungame import create_game, game_runner, home_dir
 import shutil
-import multiprocessing as mp
 import os
 from typing import List, Union
 from flask import Flask, request, render_template, redirect
@@ -35,22 +34,6 @@ def kill_game(device_id: str):
     if not home.joinpath(f'{device_id}.py').exists():
         return
     home.joinpath(f'{device_id}.kill').touch()
-
-    # if device_id in active_games:
-    #     active_games[device_id]['process'].join(5)
-    #     if not active_games[device_id]['process'].is_alive():
-
-    #         if home.joinpath(f'{device_id}.kill').exists():
-    #             os.remove(home.joinpath(f'{device_id}.kill'))
-    #         print(f'killed {device_id}')
-    #         active_games[device_id]['process'].close()
-
-    #         del active_games[device_id]
-    #         file = home.joinpath(f'{device_id}.py')
-    #         if file.exists():
-    #             os.remove(file)
-    #     else:
-    #         print('could not kill process: ', device_id)
 
 
 def on_client_devices(devices: List[Device]):
@@ -142,33 +125,18 @@ def unzip(zip_file: Path):
         shutil.rmtree(tmp_name)
 
 
-def _start_game(target: str, device_id: str):
+def start_game(target: Path) -> str:
+    global active_games
+    device_id = f'game-{time.time_ns()}'
+    if device_id in active_games:
+        kill_game(device_id)
     home = home_dir().joinpath('.running_games')
     if not home.exists():
         home.mkdir(exist_ok=True)
         shutil.chown(home, user=game_runner())
 
     target = Path(target)
-    file = create_game(target, device_id)
-    # if root.joinpath('venv/bin/python').exists():
-    #     run(root.joinpath('venv/bin/python'), file, target.parent)
-    # else:
-    #     run(Path('/app/.heroku/python/bin/python'), file, target.parent)
-
-
-def start_game(target: Path) -> str:
-    global active_games
-    device_id = f'game-{time.time_ns()}'
-    if device_id in active_games:
-        kill_game(device_id)
-    _start_game(target, device_id)
-    # ctx = mp.get_context('spawn')
-    # p = ctx.Process(target=_start_game, args=(str(target), device_id))
-    # p.start()
-    # active_games[device_id] = {
-    #     'process': p,
-    #     'created': time.time()
-    # }
+    create_game(target, device_id)
     return device_id
 
 
