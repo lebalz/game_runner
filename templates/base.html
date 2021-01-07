@@ -68,7 +68,15 @@
               >
             </li>
             <div class="flex-fill"></div>
-            {% if user %}
+            {% if user %} {% if user.admin %}
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'admin' else ''}}"
+                href="/admin"
+                >Admin</a
+              >
+            </li>
+            {% endif %}
             <li class="nav-item">
               <a
                 class="nav-link {{'active' if active == 'upload_game' else ''}}"

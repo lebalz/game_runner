@@ -1,0 +1,61 @@
+{% extends 'base.html' %} {% block body %}
+
+<h1>Running Games</h1>
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <thead>
+      <tr>
+        <th scope="col">PID</th>
+        <th scope="col">Name</th>
+        <th scope="col">Join</th>
+        <th scope="col">Löschen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for game in running_games %}
+      <tr>
+        <td>{{game[0]}}</td>
+        <td>{{game[1]}}</td>
+        <td>
+          <a
+            href="https://io.gbsl.website/playground?device_id={{game.id}}&silent=1"
+            target="_blank"
+            >Join</a
+          >
+        </td>
+        <td>
+          <form action="/delete" method="POST">
+            <input type="hidden" name="id" value="{{game[1]}}" />
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h1>Users</h1>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <thead>
+      <tr>
+        <th scope="col">Email</th>
+        <th scope="col">Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for usr in users %}
+      <tr>
+        <td>{{usr.email}}</td>
+        <td>{{usr.created}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

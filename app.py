@@ -1,4 +1,4 @@
-from rungame import create_game, extract_game
+from rungame import create_game, extract_game, running_games
 import shutil
 import os
 from typing import List, Union
@@ -50,13 +50,13 @@ def is_process_running(pid: Union[str, int]) -> bool:
     return len(list(filter(lambda l: l.strip().startswith(str(pid)), processes.splitlines())))
 
 
-def kill_game(device_id: str):
+def kill_game(device_id: str, force: bool = False):
     ps = play_session(device_id)
     home = root.joinpath('running_games')
-    if not home.joinpath(f'{device_id}.py').exists():
+    if not force and not home.joinpath(f'{device_id}.py').exists():
         return
     home.joinpath(f'{device_id}.kill').touch()
-    if ps:
+    if ps and not ps.end_time:
         ps.end_time = dt.now()
         db.session.commit()
 
@@ -120,6 +120,30 @@ def index():
     games = Game.query.all()
     user = current_player()
     return render_template('index.html', games=games, active='index', user=user)
+
+
+@app.route('/admin')
+def admin():
+    user = current_player()
+    if not user or not user.admin:
+        return redirect('/')
+    running = running_games()
+    return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all())
+
+
+@app.route('/terminate_game', methods=['POST'])
+def terminate_game():
+    user = current_player()
+    if not user or not user.admin:
+        return redirect('/')
+    game_play_id = request.form.get('id')
+    home = root.joinpath('running_games')
+    if home.joinpath(f'{game_play_id}.kill').exists():
+        os.remove(home.joinpath(f'{game_play_id}.kill'))
+    kill_game(game_play_id, force=True)
+    time.sleep(0.5)
+    running = running_games()
+    return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all())
 
 
 @app.route('/most_played')

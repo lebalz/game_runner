@@ -14,8 +14,10 @@ from datetime import datetime as dt
 CONNECTOR_REGEX = re.compile(r'Connector\(.*?\)')
 CONNECTOR_NAME_REGEX = re.compile(r'(?P<indent>\s*)(?P<var_name>\b\S+\b)\s*=\s*Connector\(.*?\)')
 
+RUNNING_GAME_REGEX = re.compile(
+    r'^(?P<pid>\d+).*?/app/\.heroku/python/bin/python3 /app/running_games/(?P<game>game-\d{19})\.py$')
+
 DEFAULT_GAME_RUNNER = 'game_runner'
-DEFAULT_GAME_RUNNER_PW = 'asdfasdf'
 root = Path(__file__).parent
 
 
@@ -27,6 +29,14 @@ def game_runner_home() -> Path:
     name = os.getenv('GAME_RUNNER', DEFAULT_GAME_RUNNER)
     pw = pwd.getpwnam(name)
     return Path(pw.pw_dir)
+
+
+def running_games():
+    raw_processes = map(lambda p: p.strip(), os.popen(f'/bin/ps a -u game_runner').read().splitlines())
+    processes = map(lambda proc: RUNNING_GAME_REGEX.match(proc), raw_processes)
+    processes = filter(lambda proc: proc is not None, processes)
+    running = list(map(lambda proc: (proc['pid'], proc['game']), processes))
+    return running
 
 
 def upload_dir() -> Path:
