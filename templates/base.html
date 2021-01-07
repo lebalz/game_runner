@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+  <title>Game Runner</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
+      crossorigin="anonymous"
+    />
+
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/style.css') }}"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="fas fa-gamepad"></i></a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 container-fluid">
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'home' else ''}}"
+                aria-current="page"
+                href="/"
+                >Home</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'index' else ''}}"
+                href="/index"
+                >Games</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'most_played' else ''}}"
+                href="/most_played"
+                >Most Played</a
+              >
+            </li>
+            <div class="flex-fill"></div>
+            {% if user %}
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'upload_game' else ''}}"
+                href="/upload_game"
+                >Upload</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'user' else ''}}"
+                href="/user"
+                >My Games</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/logout"
+                ><i class="fas fa-sign-out-alt"></i> Logout</a
+              >
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link disabled" href="/">Upload</a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if active == 'login' else ''}}"
+                href="/login"
+                >Login <i class="fas fa-sign-in-alt"></i
+              ></a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% block body %}{% endblock %}
+  </body>
+</html>

@@ -1,8 +1,21 @@
-<!doctype html>
-<title>Hello from Flask</title>
-
-<h1>Game Dashboard</h1>
-
-<a href="/index">Play</a>
-
-<a href="/upload_game">Upload</a>
+{% extends 'base.html' %} {% block body %}
+<h1>Game Runner</h1>
+<div class="container">
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for game in games %}
+    <div class="col">
+      <div class="card">
+        {% if game.preview_img_path %}
+        <img src="{{game.preview_img_url}}" class="card-img-top" />
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{game.name}}</h5>
+          <p class="card-text">@{{game.authors}}</p>
+          <a href="/game?game={{game.id}}" class="btn btn-primary">Play</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

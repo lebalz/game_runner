@@ -1,12 +1,49 @@
-<!doctype html>
-<title>Hello from Flask</title>
-
-<a href="/">Back</a>
-
-<form method="POST" action="/upload_game" enctype="multipart/form-data">
-    <label for="name">Name</label>
-    <input type="text" name="name" id="name">
-    <label for="game">Game.zip</label>
-    <input type="file" name="game" id="game">
-    <input type="submit" value="Upload">
-</form>
+{% extends 'base.html' %} {% block body %}
+<div class="container">
+  <form method="POST" action="/upload_game" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="name" class="form-label">Game Name</label>
+      <input
+        type="text"
+        class="form-control"
+        id="name"
+        name="name"
+        aria-describedby="nameHelp"
+        maxlength="32"
+        minlength="2"
+        placeholder="Game"
+        required
+      />
+      <div id="nameHelp" class="form-text">Name of your Game Project.</div>
+    </div>
+    <div class="mb-3">
+      <label for="authors" class="form-label">Authors</label>
+      <input
+        type="text"
+        class="form-control"
+        id="authors"
+        name="authors"
+        aria-describedby="authorsHelp"
+        maxlength="64"
+        minlength="2"
+        placeholder="Your Cool Teamname"
+        required
+      />
+      <div id="authorsHelp" class="form-text">Name of the Game Programmers</div>
+    </div>
+    <div>
+      <label for="game" class="form-label">Game (.zip or .py)</label>
+      <input
+        class="form-control"
+        id="game"
+        type="file"
+        name="game"
+        aria-describedby="gameHelp"
+        accept=".zip,.py"
+        required
+      />
+    </div>
+    <button type="submit" class="btn btn-primary">Upload</button>
+  </form>
+</div>
+{% endblock %}

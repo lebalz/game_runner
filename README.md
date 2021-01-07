@@ -4,7 +4,23 @@ A simple Flask application to upload and play [smarphone-connector](https://gith
 
 The uploaded games could have potentially unsave code - thats why the code is executed as an unprivileged user _game_runner_ with read-only access.
 
-Whenever a python-file is added to `home/game_runner/.running_games` (e.g. `game-1234.py`), [inotifywait](https://linux.die.net/man/1/inotifywait) starts the python script as the user _game_runner_ in a background process. When a file `name.kill` (e.g. `game-1234.kill`) is added, the previously started process is killed.
+Whenever a python-file is added to `./running_games` (e.g. `game-1234.py`), [inotifywait](https://linux.die.net/man/1/inotifywait) starts the python script as the user _game_runner_ in a background process. When a file `name.kill` (e.g. `game-1234.kill`) is added, the previously started process is killed.
+
+## Development
+
+### New Migration
+
+Since the `startup()` method should not be called on migrations, touch first the File `.skip_setup`
+
+```sh
+touch .skip_setup && flask db migrate
+```
+
+apply migration
+
+```sh
+touch .skip_setup && flask db upgrade
+```
 
 ### Configure Dokku
 

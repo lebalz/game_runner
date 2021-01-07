@@ -1,0 +1,7 @@
+input:required:invalid {
+  background-color: rgba(134, 0, 0, 0.521);
+}
+
+input:required:valid {
+  background-color: rgba(0, 134, 51, 0.521);
+}

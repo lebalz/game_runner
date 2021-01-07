@@ -5,3 +5,5 @@ __pycache__
 .DS_Store
 running
 .env
+.skip_setup
+flask_session

@@ -1,5 +1,5 @@
 # register task to startup python scripts or kill them as read only user...
-inotifywait -m /home/game_runner/.running_games -e create -e moved_to |
+inotifywait -m /app/running_games -e create -e moved_to |
     while read path action file; do
         echo "got new file: $action, $path, $file"
         if [[ $file == *.py ]]
@@ -7,6 +7,8 @@ inotifywait -m /home/game_runner/.running_games -e create -e moved_to |
             # extract the stem of the file
             game=${file%%.*}
             project=$(cat "$path$game.project")
+            # wait a little s.t. the page will be loaded before startup
+            sleep 0.5
             # start the game as user game_runner in a new background task
             /bin/su -s /bin/bash -c "(cd /app/uploads/$project && /app/.heroku/python/bin/python3 $path$file &)" game_runner
         else

@@ -1,12 +1,20 @@
-<!doctype html>
-<title>Hello from Flask</title>
-
+{% extends 'base.html' %} {% block body %}
 <h1>Games</h1>
 
-<a href="/">Back</a>
-<ul>
-
-    {% for game in games %}
-    <li><a href="/game?game={{game}}">{{game}}</a></li>
-    {% endfor %}
-</ul>
+<div class="row row-cols-1 row-cols-md-4 g-4">
+  {% for game in games %}
+  <div class="col">
+    <div class="card">
+      {% if game.preview_img_url %}
+      <img src="{{game.preview_img_url}}" class="card-img-top" />
+      {% endif %}
+      <div class="card-body">
+        <h5 class="card-title">{{game.name}}</h5>
+        <p class="card-text">@{{game.authors}}</p>
+        <a href="/game?game={{game.id}}" class="btn btn-primary">Play</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
