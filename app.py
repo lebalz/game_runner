@@ -142,8 +142,7 @@ def terminate_game():
         os.remove(home.joinpath(f'{game_play_id}.kill'))
     kill_game(game_play_id, force=True)
     time.sleep(0.5)
-    running = running_games()
-    return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all())
+    return redirect('/admin')
 
 
 @app.route('/most_played')
