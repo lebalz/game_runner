@@ -204,38 +204,23 @@ def most_played():
     return render_template('most_played.html', result=result, active='most_played', user=current_player())
 
 
-@ app.route('/request_player_login', methods=['GET'])
-def request_player_login():
-    game = request.args['game']
+@ app.route('/request_player_login/<game_id>', methods=['GET'])
+def request_player_login(game_id: int = -1):
     if 'flow' not in session:
         session["flow"] = _build_auth_code_flow(scopes=app.config['SCOPE'])
-    return render_template("request_player_login.html", auth_url=session["flow"]["auth_uri"], game=game)
+    return render_template("request_player_login.html", auth_url=session["flow"]["auth_uri"], game_id=game_id)
 
 
-@ app.route('/game/<game_id>', methods=['GET'])
-def game(game_id: int = -1):
-    game = get_game(game_id)
-    if not game:
-        return redirect('/index')
-
-    email = session.get("email")
-    if 'anonymous' in request.args:
-        player = anonymous_player()
-    elif not email:
-        return redirect(f'/request_player_login?game={game_id}')
-    else:
-        player = current_player()
-
-    if not player:
-        return redirect('/index')
-
+def __play_game(game: Game, player: Player):
+    if game is None or player is None:
+        return
     target_dir = game.project_path
     if target_dir.joinpath('game.py').exists():
         target = target_dir.joinpath('game.py')
     else:
         target = next(target_dir.glob('*.py'), None)
         if target is None:
-            return redirect('/index')
+            return
     device_id = start_game(target)
     game_play = GamePlay(
         player,
@@ -244,7 +229,34 @@ def game(game_id: int = -1):
     )
     db.session.add(game_play)
     db.session.commit()
-    return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
+    return device_id
+
+
+@app.route('/anonym/<game_id>', methods=['GET'])
+def game_anonym(game_id: int = -1):
+    game = get_game(game_id)
+    player = anonymous_player()
+    device_id = __play_game(game, player)
+    if device_id:
+        return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
+    else:
+        return redirect('/index')
+
+
+@app.route('/game/<game_id>', methods=['GET'])
+def game(game_id: int = -1):
+    game = get_game(game_id)
+    if not game:
+        return redirect('/index')
+
+    player = current_player()
+    if not player:
+        return redirect(f'/request_player_login/{game_id}')
+    device_id = __play_game(game, player)
+    if device_id:
+        return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
+    else:
+        return redirect('/index')
 
 
 def play_session(device_id: str) -> Union[GamePlay, None]:
