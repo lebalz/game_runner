@@ -35,7 +35,7 @@ def running_games():
     raw_processes = map(lambda p: p.strip(), os.popen(f'/bin/ps a -u game_runner').read().splitlines())
     processes = map(lambda proc: RUNNING_GAME_REGEX.match(proc), raw_processes)
     processes = filter(lambda proc: proc is not None, processes)
-    running = list(map(lambda proc: (proc['pid'], proc['game']), processes))
+    running = list(map(lambda proc: {'pid': proc['pid'], 'game_play_id': proc['game']}, processes))
     return running
 
 

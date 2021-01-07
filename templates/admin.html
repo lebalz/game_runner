@@ -15,18 +15,18 @@
     <tbody>
       {% for game in running_games %}
       <tr>
-        <td>{{game[0]}}</td>
-        <td>{{game[1]}}</td>
+        <td>{{game['pid']}}</td>
+        <td>{{game['game_play_id']}}</td>
         <td>
           <a
-            href="https://io.gbsl.website/playground?device_id={{game[1]}}&silent=1"
+            href="https://io.gbsl.website/playground?device_id={{game['game_play_id']}}&silent=1"
             target="_blank"
             >Join</a
           >
         </td>
         <td>
           <form action="/terminate_game" method="POST">
-            <input type="hidden" name="id" value="{{game[1]}}" />
+            <input type="hidden" name="id" value="{{game['game_play_id']}}" />
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-trash"></i>
             </button>
@@ -58,4 +58,16 @@
   </table>
 </div>
 
+<script>
+  setInterval(() => {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        console.log(JSON.parse(this.responseText));
+      }
+    };
+    xhttp.open("GET", "/running_games", true);
+    xhttp.send();
+  }, 1000);
+</script>
 {% endblock %}

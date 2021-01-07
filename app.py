@@ -2,7 +2,7 @@ from rungame import create_game, extract_game, running_games
 import shutil
 import os
 from typing import List, Union
-from flask import Flask, request, render_template, redirect, session, url_for
+from flask import Flask, request, render_template, redirect, session, url_for, json
 from flask_migrate import Migrate
 from datetime import datetime as dt
 from pathlib import Path
@@ -129,6 +129,20 @@ def admin():
         return redirect('/')
     running = running_games()
     return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all())
+
+
+@app.route('/running_games')
+def fetch_running_games():
+    user = current_player()
+    if not user or not user.admin:
+        return {}
+    running = running_games()
+    response = app.response_class(
+        response=json.dumps(running),
+        status=200,
+        mimetype='application/json'
+    )
+    return response
 
 
 @app.route('/terminate_game', methods=['POST'])
