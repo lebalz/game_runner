@@ -30,6 +30,57 @@ touch .skip_setup && flask db upgrade
 - the inotify configuration can be found in [on_game_state_change.sh](on_game_state_change.sh)
 - ... and is started as a background task during the startup of the flask app through the [Procfile](Procfile)
 
+### Prerequirements
+
 ```sh
+dokku plugin:install https://github.com/dokku/dokku-postgres.git postgres
+dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git
+```
+
+### Application install
+
+```sh
+dokku apps:create game-runner
+dokku domains:add game-runner "your.domain.com"
 dokku config:set --no-restart game_runner APP_SETTINGS=config.ProductionConfig
+
+# enable upload sizes up to 20mb
+mkdir /home/dokku/game-runner/nginx.conf.d
+echo 'client_max_body_size 20m;' > /home/dokku/game-runner/nginx.conf.d/upload.conf
+chown dokku:dokku /home/dokku/game-runner/nginx.conf.d/upload.conf
+service nginx reload
+
+# create db
+dokku postgres:create game-runner
+dokku postgres:link game-runner game-runner
+
+# create persistent storage folders
+mkdir -p  /var/lib/dokku/data/storage/game-runner/uploads
+chown -R 32767:32767 /var/lib/dokku/data/storage/game-runner/uploads
+mkdir -p  /var/lib/dokku/data/storage/game-runner/previews
+chown -R 32767:32767 /var/lib/dokku/data/storage/game-runner/previews
+
+dokku storage:mount game-runner /var/lib/dokku/data/storage/game-runner/uploads:/app/uploads
+dokku storage:mount game-runner /var/lib/dokku/data/storage/game-runner/previews:/app/static/previews
+```
+
+setup all your env's with `nano nano /home/dokku/game-runner/ENV`
+
+### Initial Deploy
+
+```sh
+git remote add dokku dokku@<your-ip>:game-runner
+git push dokku main:master
+```
+
+### Letsencrypt
+
+Make sure:
+
+- you have set a domain and your page is reachable
+- no pagerules with permanent redirects e.g. from Cloudflare exists
+
+```sh
+dokku config:set --no-restart game-runner DOKKU_LETSENCRYPT_EMAIL=lebalz@outlook.com
+dokku letsencrypt game-runner
 ```
