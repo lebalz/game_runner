@@ -6,6 +6,7 @@ inotifywait -m /app/running_games -e create -e moved_to |
         then
             # extract the stem of the file
             game=${file%%.*}
+            # a file <game-name>.project contains the project folder
             project=$(cat "$path$game.project")
             # wait a little s.t. the page will be loaded before startup
             sleep 0.5

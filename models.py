@@ -5,6 +5,7 @@ from datetime import datetime as dt
 from pathlib import Path
 import os
 import time
+from werkzeug.utils import secure_filename
 
 root = Path(__file__).parent
 
@@ -53,7 +54,8 @@ class Game(db.Model):
     @property
     def project_path(self) -> Path:
         folder = Path(os.environ.get('UPLOAD_PATH', Path(__file__).parent.joinpath('uploads')))
-        return folder.joinpath(f'{self.name}-{self.id}')
+        name = secure_filename(f'{self.name}-{self.id}')
+        return folder.joinpath(name)
 
     @property
     def is_available(self) -> Path:
@@ -61,7 +63,8 @@ class Game(db.Model):
 
     @property
     def static_folder(self) -> Path:
-        return root.joinpath('static', 'previews', self.name)
+        name = secure_filename(self.name)
+        return root.joinpath('static', 'previews', name)
 
     @property
     def preview_img_path(self) -> Union[Path, None]:
@@ -76,7 +79,7 @@ class Game(db.Model):
     def preview_img_url(self) -> Union[str, None]:
         prev_img = self.preview_img_path
         if prev_img:
-            return f'/static/previews/{self.name}/{prev_img.name}'
+            return f'/static/previews/{prev_img.parent.name}/{prev_img.name}'
 
 
 class GamePlay(db.Model):
