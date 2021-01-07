@@ -24,7 +24,7 @@ apply migration
 touch .skip_setup && flask db upgrade
 ```
 
-### Configure Dokku
+## [Dokku](http://dokku.viewdocs.io/dokku/) Deployment
 
 - inotifywait is installed during the predeploy stage, @see [app.json](app.json)
 - the inotify configuration can be found in [on_game_state_change.sh](on_game_state_change.sh)
@@ -37,7 +37,7 @@ dokku plugin:install https://github.com/dokku/dokku-postgres.git postgres
 dokku plugin:install https://github.com/dokku/dokku-letsencrypt.git
 ```
 
-### Application install
+### Setup
 
 ```sh
 dokku apps:create game-runner
@@ -46,6 +46,7 @@ dokku config:set --no-restart game_runner APP_SETTINGS=config.ProductionConfig
 
 # enable upload sizes up to 20mb
 mkdir /home/dokku/game-runner/nginx.conf.d
+chown -R dokku:dokku /home/dokku/game-runner/nginx.conf.d/
 echo 'client_max_body_size 20m;' > /home/dokku/game-runner/nginx.conf.d/upload.conf
 chown dokku:dokku /home/dokku/game-runner/nginx.conf.d/upload.conf
 service nginx reload
