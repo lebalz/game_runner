@@ -152,10 +152,8 @@ def scoreboard(game_id: int = -1):
         SELECT avg(rating) as rating, count(id) as count
         FROM ratings
         WHERE game_id = :gid
-    ''', {'gid': game_id})
-    if len(rating) > 0:
-        rating = rating[0]
-    else:
+    ''', {'gid': game_id}).first()
+    if rating is None:
         rating = {'rating': '', 'count': 0}
 
     scoreboard = db.session.execute(f'''\
