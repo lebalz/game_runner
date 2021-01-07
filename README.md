@@ -1,6 +1,8 @@
 # Game Runner
 
-A simple Flask application to upload and play [smarphone-connector](https://github.com/lebalz/smartphone-connector)/[socketio_server](https://github.com/lebalz/socketio_server) games.
+A simple Flask application to upload and play [smarphone-connector](https://github.com/lebalz/smartphone-connector)/[socketio_server](https://github.com/lebalz/socketio_server) games written in python.
+
+![game-runner](game_runner.png)
 
 The uploaded games could have potentially unsave code - thats why the code is executed as an unprivileged user _game_runner_ with read-only access.
 
