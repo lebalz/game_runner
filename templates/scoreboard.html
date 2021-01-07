@@ -1,13 +1,16 @@
 {% extends 'base.html' %} {% block body %}
 
 <h1>Scoreboard {{game.name}}</h1>
-<span class="badge badge-warning">Rating: {{rating['rating']}}</span>
-<span class="badge badge-primary">Plays: {{rating['count']}}</span>
+<span class="badge bg-warning text-dark"
+  >Rating: {{'?' if rating['rating'] is None else rating['rating']}}</span
+>
+<span class="badge bg-primary text-light">Plays: {{rating['count']}}</span>
 
 <div class="table-responsive">
   <table class="table table-striped table-hover table-sm">
     <thead>
       <tr>
+        <th scope="col">#</th>
         <th scope="col">Name</th>
         <th scope="col">Score</th>
         <th scope="col">Plays</th>
@@ -17,7 +20,11 @@
     <tbody>
       {% for play in scoreboard %}
       <tr class="{{'bg-warning' if loop.index == 1 else ''}}">
-        <td>{{' '.join(play['player_email'].split('@')[0].split('.'))}}</td>
+        <td>{{loop.index}}</td>
+        <td>
+          {{play['player_email'].split('.')[0].capitalize() + ' '}}
+          {{play['player_email'].split('@')[0].split('.')[-1].capitalize())}}
+        </td>
         <td>{{play['highscore']}}</td>
         <td>{{play['plays']}}</td>
         <td>{{play['play_time']}}</td>

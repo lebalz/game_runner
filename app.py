@@ -188,18 +188,18 @@ def terminate_game():
 def most_played():
     result = db.session.execute('''\
         SELECT
-            games.name AS "name",
-            games.authors AS "authors",
-            sum(game_plays.end_time-game_plays.start_time) AS "duration",
-            count(game_plays.id) AS "count",
-            avg(ratings.rating) AS "rating",
-            max(game_plays.score) AS "max_score",
-            max(game_plays.end_time-game_plays.start_time) AS "max_duration"
+            games.name AS name,
+            games.authors AS authors,
+            sum(extract(epoch from (end_time-start_time))) / 60 as duration,
+            count(game_plays.id) AS count,
+            avg(ratings.rating) AS rating,
+            max(game_plays.score) AS max_score,
+            max(extract(epoch from (end_time-start_time))) / 60 AS max_duration
         FROM games
             INNER JOIN game_plays ON games.id = game_plays.game_id
             LEFT JOIN ratings ON games.id = ratings.id
         GROUP BY games.id
-        ORDER BY sum(game_plays.end_time-game_plays.start_time) DESC;
+        ORDER BY sum(extract(epoch from (end_time-start_time))) DESC;
     ''')
     return render_template('most_played.html', result=result, active='most_played', user=current_player())
 
