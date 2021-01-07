@@ -12,10 +12,10 @@
         <th scope="col">Löschen</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="running-games-content">
       {% for game in running_games %}
       <tr>
-        <td>{{game['pid']}}</td>
+        <td class="pid">{{game['pid']}}</td>
         <td>{{game['game_play_id']}}</td>
         <td>
           <a
@@ -57,17 +57,54 @@
     </tbody>
   </table>
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"></script>
 <script>
   setInterval(() => {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
-        console.log(JSON.parse(this.responseText));
+        const table = document.querySelector("#running-games-content");
+        const pids = [...table.querySelectorAll(".pid")]
+          .map((pid) => pid.innerHTML)
+          .sort();
+        const newGames = JSON.parse(this.responseText);
+        const newPids = newGames.map((game) => game.pid).sort();
+        if (
+          pids.length !== newPids.length ||
+          JSON.stringify(pids) !== JSON.stringify(newPids)
+        ) {
+          const html = [];
+          newGames.forEach((game) => {
+            const pid = _.escape(game.pid);
+            const game_play_id = _.escape(game.game_play_id);
+            html.push(`
+              <tr>
+                <td class="pid">${pid}</td>
+                <td>${game_play_id}</td>
+                <td>
+                  <a
+                    href="https://io.gbsl.website/playground?device_id=${game_play_id}&silent=1"
+                    target="_blank"
+                    >Join</a
+                  >
+                </td>
+                <td>
+                  <form action="/terminate_game" method="POST">
+                    <input type="hidden" name="id" value="${game_play_id}" />
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            `);
+          });
+          table.innerHTML = html.join("\n");
+        }
       }
     };
     xhttp.open("GET", "/running_games", true);
     xhttp.send();
-  }, 1000);
+  }, 1500);
 </script>
 {% endblock %}
