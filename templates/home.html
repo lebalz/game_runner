@@ -6,7 +6,11 @@
     <div class="col">
       <div class="card">
         {% if game.preview_img_path %}
-        <img src="{{game.preview_img_url}}" class="card-img-top" />
+        <img
+          src="{{game.preview_img_url}}"
+          class="card-img-top"
+          style="max-height: 180px; object-fit: contain"
+        />
         {% endif %}
         <div class="card-body">
           <h5 class="card-title">{{game.name}}</h5>
