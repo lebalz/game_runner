@@ -135,7 +135,7 @@ def admin():
 def fetch_running_games():
     user = current_player()
     if not user or not user.admin:
-        return {}
+        return app.response_class(response=json.dumps({}), status=200, mimetype='application/json')
     running = running_games()
     response = app.response_class(
         response=json.dumps(running),
@@ -145,7 +145,34 @@ def fetch_running_games():
     return response
 
 
-@app.route('/terminate_game', methods=['POST'])
+@app.route('/scoreboard/<game_id>')
+def scoreboard(game_id: int = -1):
+    game = get_game(game_id)
+    rating = db.session.execute('''\
+        SELECT avg(rating) as rating, count(id) as count
+        FROM ratings
+        WHERE game_id = :gid
+    ''', {'gid': game_id})
+    if len(rating) > 0:
+        rating = rating[0]
+    else:
+        rating = {'rating': '', 'count': 0}
+
+    scoreboard = db.session.execute(f'''\
+        SELECT
+            player_email,
+            max(score) as highscore,
+            count(id) as plays,
+            sum(extract(epoch from (end_time-start_time))) / 60 as play_time
+        FROM game_plays
+        WHERE game_id = :gid AND player_email != '{ANONYMOUS_EMAIL}'
+        GROUP BY player_email
+        ORDER BY max(score) DESC
+    ''', {'gid': game_id})
+    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, user=current_player())
+
+
+@ app.route('/terminate_game', methods=['POST'])
 def terminate_game():
     user = current_player()
     if not user or not user.admin:
@@ -159,7 +186,7 @@ def terminate_game():
     return redirect('/admin')
 
 
-@app.route('/most_played')
+@ app.route('/most_played')
 def most_played():
     result = db.session.execute('''\
         SELECT
@@ -179,7 +206,7 @@ def most_played():
     return render_template('most_played.html', result=result, active='most_played', user=current_player())
 
 
-@app.route('/request_player_login', methods=['GET'])
+@ app.route('/request_player_login', methods=['GET'])
 def request_player_login():
     game = request.args['game']
     if 'flow' not in session:
@@ -187,9 +214,8 @@ def request_player_login():
     return render_template("request_player_login.html", auth_url=session["flow"]["auth_uri"], game=game)
 
 
-@app.route('/game', methods=['GET'])
-def game():
-    game_id = request.args['game']
+@ app.route('/game/<game_id>', methods=['GET'])
+def game(game_id: int = -1):
     game = get_game(game_id)
     if not game:
         return redirect('/index')
@@ -263,7 +289,7 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
     ).first()
 
 
-@app.route('/upload_game', methods=['GET', 'POST'])
+@ app.route('/upload_game', methods=['GET', 'POST'])
 def upload_game():
     user = current_player()
     if not user:
@@ -283,13 +309,13 @@ def upload_game():
         return render_template('upload_form.html', active='upload_game', user=user)
 
 
-@app.route('/user', methods=['GET'])
+@ app.route('/user', methods=['GET'])
 def user():
     user = current_player()
     return render_template('user.html', games=user.games, active='user', user=user)
 
 
-@app.route('/delete', methods=['POST'])
+@ app.route('/delete', methods=['POST'])
 def delete():
     user = current_player()
     if not user:
@@ -323,14 +349,14 @@ def start_game(target: Path) -> str:
     return device_id
 
 
-@app.route("/login")
+@ app.route("/login")
 def login():
     if 'flow' not in session:
         session["flow"] = _build_auth_code_flow(scopes=app.config['SCOPE'])
     return render_template("login.html", auth_url=session["flow"]["auth_uri"], active='login')
 
 
-@app.route(app.config['REDIRECT_PATH'])  # Its absolute URL must match your app's redirect_uri set in AAD
+@ app.route(app.config['REDIRECT_PATH'])  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
     try:
         cache = _load_cache()
@@ -355,7 +381,7 @@ def authorized():
     return redirect('/')
 
 
-@app.route("/logout")
+@ app.route("/logout")
 def logout():
     session.clear()  # Wipe out user and its token cache from session
     return redirect(  # Also logout from your tenant's web session
