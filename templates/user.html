@@ -17,7 +17,7 @@
       <tr>
         <td>{{game.name}}</td>
         <td>{{game.created}}</td>
-        <td><a href="/game?game={{game.id}}">Spielen</a></td>
+        <td><a href="/game/{{game.id}}">Spielen</a></td>
         <td>
           <form action="/delete" method="POST">
             <input type="hidden" name="id" value="{{game.id}}" />
