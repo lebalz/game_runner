@@ -163,7 +163,7 @@ def most_played():
         GROUP BY games.id
         ORDER BY sum(game_plays.end_time-game_plays.start_time) DESC;
     ''')
-    return render_template('most_played.html', result=result, active='most_played')
+    return render_template('most_played.html', result=result, active='most_played', user=current_player())
 
 
 @app.route('/request_player_login', methods=['GET'])
@@ -252,7 +252,7 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
 
 @app.route('/upload_game', methods=['GET', 'POST'])
 def upload_game():
-    user = session.get("user")
+    user = current_player()
     if not user:
         return redirect(url_for("login"))
 

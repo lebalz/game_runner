@@ -19,13 +19,13 @@
         <td>{{game[1]}}</td>
         <td>
           <a
-            href="https://io.gbsl.website/playground?device_id={{game.id}}&silent=1"
+            href="https://io.gbsl.website/playground?device_id={{game[1]}}&silent=1"
             target="_blank"
             >Join</a
           >
         </td>
         <td>
-          <form action="/delete" method="POST">
+          <form action="/terminate_game" method="POST">
             <input type="hidden" name="id" value="{{game[1]}}" />
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-trash"></i>
