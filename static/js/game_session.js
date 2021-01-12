@@ -14,7 +14,7 @@ const on_game_start = (event, gameId) => {
     return;
 }
 
-const on_rate = (event, gameId, rating) => {
+const on_vote = (event, gameId, rating) => {
     if (gameId) {
         var xhttp = new XMLHttpRequest();
         xhttp.open("POST", "/game_vote", true);
