@@ -149,7 +149,7 @@ def fetch_running_games():
 def scoreboard(game_id: int = -1):
     game = get_game(game_id)
     rating = db.session.execute('''\
-        SELECT avg(rating) as rating, count(id) as count
+        SELECT ROUND(avg(rating), 1) as rating, count(id) as count
         FROM ratings
         WHERE game_id = :gid
     ''', {'gid': game_id}).first()

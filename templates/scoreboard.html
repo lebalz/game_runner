@@ -1,9 +1,7 @@
 {% extends 'base.html' %} {% block body %}
 
 <h1>Scoreboard {{game.name}}</h1>
-<span class="badge bg-warning text-dark"
-  >Rating: {{round(rating['rating'],1)}}</span
->
+<span class="badge bg-warning text-dark">Rating: {{rating['rating']}}</span>
 <span class="badge bg-primary text-light">Count: {{rating['count']}}</span>
 
 <div class="table-responsive">
