@@ -42,7 +42,7 @@ ANONYMOUS_EMAIL = 'anonymous@foo.bar'
 
 # important to import models AFTER initializing the app! Otherwise
 # a circular import error will be thrown
-from models import Game, Player, GamePlay
+from models import Game, Player, GamePlay, Rating
 
 
 def is_process_running(pid: Union[str, int]) -> bool:
@@ -260,6 +260,7 @@ def play_session(device_id: str) -> Union[GamePlay, None]:
 
 
 def current_player() -> Union[Player, None]:
+    # return anonymous_player()
     email = session.get('email')
     if not email:
         return None
@@ -361,6 +362,30 @@ def _terminate_game(game_play_id: str):
     if home.joinpath(f'{game_play_id}.kill').exists():
         os.remove(home.joinpath(f'{game_play_id}.kill'))
     kill_game(game_play_id, force=True)
+
+
+@app.route('/game_vote', methods=['POST'])
+def game_vote():
+    user = current_player()
+    game_id = request.form.get('game_id')
+    new_rating = request.form.get('rating')
+    game = get_game(game_id)
+    if user is None or game is None:
+        return app.response_class(status=403, response=json.dumps({'status': 'login first'}), mimetype='application/json')
+
+    rating = user.rating(game.id)
+    if rating:
+        rating.rating = int(new_rating)
+        db.session.commit()
+    else:
+        r = Rating(
+            user,
+            game,
+            new_rating
+        )
+        db.session.add(r)
+    db.session.commit()
+    return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
 
 
 @app.route('/terminate_game', methods=['POST'])

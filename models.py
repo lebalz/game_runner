@@ -15,8 +15,9 @@ class Player(db.Model):
 
     email = db.Column(db.String(50), primary_key=True)
     admin = db.Column(db.Boolean, index=False, unique=False, nullable=False, server_default='true', default=True)
-    games = db.relationship('Game', backref='player', lazy=True)
-    game_plays = db.relationship('GamePlay', backref='game_play', lazy=True)
+    games = db.relationship('Game', backref='players', lazy=True)
+    game_plays = db.relationship('GamePlay', backref='game_plays', lazy=False)
+    ratings = db.relationship('Rating', backref='players', lazy=False)
 
     created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
 
@@ -28,26 +29,36 @@ class Player(db.Model):
     def __repr__(self):
         return '<email {}>'.format(self.email)
 
+    def can_rate(self, game_id: int) -> bool:
+        res = next(filter(lambda p: p.game_id == game_id and p.time_played > 5, self.game_plays), None)
+        return res is not None
+
+    def rating_score(self, game_id: int) -> Union[int, None]:
+        res = self.rating(game_id)
+        return res.rating if res is not None else None
+
+    def rating(self, game_id: int):
+        return next(filter(lambda r: r.game_id == game_id, self.ratings), None)
+
+    def is_registered(self) -> bool:
+        return self.email != 'anonymous@foo.bar'
+
     def game_play(self, game_play_id: str):
-        return db.session.execute(
-            '''\
-            SELECT *
-            FROM game_plays
-            WHERE id = :gid AND player_email = :pid
-            LIMIT 1
-            ''',
-            {'gid': game_play_id, 'pid': self.email}
-        ).first()
+        return next(
+            filter(
+                lambda p: p.id == game_play_id,
+                self.game_plays
+            ),
+            None
+        )
 
     def running_games(self):
-        return db.session.execute(
-            '''\
-            SELECT *
-            FROM game_plays
-            WHERE player_email = :pid AND end_time IS NULL
-            LIMIT 1
-            ''',
-            {'pid': self.email}
+        return list(
+            filter(
+                lambda p: p.is_running,
+                self.game_plays
+            ),
+            None
         )
 
 
@@ -61,7 +72,7 @@ class Game(db.Model):
     preview_img = db.Column(db.String(27), index=False, unique=True, nullable=False)
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
     plays = db.relationship('GamePlay', backref='plays', lazy=True, cascade="all, delete")
-    ratings = db.relationship('Rating', backref='ratings', lazy=True, cascade="all, delete")
+    ratings = db.relationship('Rating', backref='ratings', lazy=False, cascade="all, delete")
 
     def __init__(self, player: Player, name: str, authors: str):
         self.name = name
@@ -82,6 +93,17 @@ class Game(db.Model):
     @property
     def is_available(self) -> Path:
         return self.project_path.exists()
+
+    @property
+    def num_ratings(self) -> int:
+        return len(self.ratings)
+
+    @property
+    def rating(self) -> Union[float, None]:
+        num = self.num_ratings
+        if num is None:
+            return None
+        return sum(map(lambda r: r.rating, self.ratings)) / self.num_ratings
 
     @property
     def static_folder(self) -> Path:
@@ -126,12 +148,24 @@ class GamePlay(db.Model):
     def __repr__(self):
         return '<email {}>'.format(self.email)
 
+    @property
+    def is_running(self) -> bool:
+        return self.end_time is None
+
+    @property
+    def time_played(self) -> float:
+        '''played time in seconds
+        '''
+        if self.end_time is None:
+            return 0
+        return (self.end_time - self.start_time).total_seconds()
+
 
 class Rating(db.Model):
     __tablename__ = 'ratings'
 
     id = db.Column(db.Integer, primary_key=True)
-    game_name = db.Column(db.String(32), index=True, unique=False, nullable=False)
+    player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
     created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
     rating = db.Column(db.Integer, index=False, nullable=False)
