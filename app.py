@@ -194,10 +194,11 @@ def most_played():
 def request_player_login(game_id: int = -1):
     if 'flow' not in session:
         session["flow"] = _build_auth_code_flow(scopes=app.config['SCOPE'])
-    return render_template("request_player_login.html", auth_url=session["flow"]["auth_uri"], game_id=game_id)
+    playgame_id = f'game-{time.time_ns()}'
+    return render_template("request_player_login.html", auth_url=session["flow"]["auth_uri"], game_id=game_id, playgame_id=playgame_id)
 
 
-def __play_game(game: Game, player: Player):
+def __play_game(game: Game, player: Player, playgame_id: str = None):
     if game is None or player is None:
         return
     if player.email != ANONYMOUS_EMAIL:
@@ -212,7 +213,7 @@ def __play_game(game: Game, player: Player):
         target = next(target_dir.glob('*.py'), None)
         if target is None:
             return
-    device_id = start_game(target)
+    device_id = start_game(target, device_id=playgame_id)
     game_play = GamePlay(
         player,
         game,
@@ -223,11 +224,15 @@ def __play_game(game: Game, player: Player):
     return device_id
 
 
-@app.route('/anonym/<game_id>', methods=['GET'])
-def game_anonym(game_id: int = -1):
+@app.route('/anonym', methods=['GET'])
+def game_anonym():
+    game_id = request.args.get('game_id')
+    playgame_id = request.args.get('playgame_id')
+    if game_id is None or playgame_id is None:
+        return redirect('/index')
     game = get_game(game_id)
     player = anonymous_player()
-    device_id = __play_game(game, player)
+    device_id = __play_game(game, player, playgame_id=playgame_id)
     if device_id:
         return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
     else:
@@ -339,9 +344,10 @@ def delete():
     return redirect('/user')
 
 
-def start_game(target: Path) -> str:
+def start_game(target: Path, device_id: str = None) -> str:
     global active_games
-    device_id = f'game-{time.time_ns()}'
+    if device_id is None:
+        device_id = f'game-{time.time_ns()}'
     if device_id in active_games:
         kill_game(device_id)
 

@@ -6,9 +6,8 @@
   <div class="btn-group">
     <a href="{{ auth_url }}" class="btn btn-warning">GBSL Account</a>
     <a
-      onclick="on_game_start(event, '{{game_id}}')"
-      href="/anonym/{{game_id}}"
-      data-game-id="{{game_id}}"
+      onclick="on_game_start(event, '{{playgame_id}}')"
+      href="/anonym?game_id={{game_id}}&playgame_id={{playgame_id}}"
       class="btn btn-secondary"
       >Anonym</a
     >
