@@ -170,21 +170,7 @@ def scoreboard(game_id: int = -1):
     return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, user=current_player())
 
 
-@ app.route('/terminate_game', methods=['POST'])
-def terminate_game():
-    user = current_player()
-    if not user or not user.admin:
-        return redirect('/')
-    game_play_id = request.form.get('id')
-    home = root.joinpath('running_games')
-    if home.joinpath(f'{game_play_id}.kill').exists():
-        os.remove(home.joinpath(f'{game_play_id}.kill'))
-    kill_game(game_play_id, force=True)
-    time.sleep(0.5)
-    return redirect('/admin')
-
-
-@ app.route('/most_played')
+@app.route('/most_played')
 def most_played():
     result = db.session.execute('''\
         SELECT
@@ -204,7 +190,7 @@ def most_played():
     return render_template('most_played.html', result=result, active='most_played', user=current_player())
 
 
-@ app.route('/request_player_login/<game_id>', methods=['GET'])
+@app.route('/request_player_login/<game_id>', methods=['GET'])
 def request_player_login(game_id: int = -1):
     if 'flow' not in session:
         session["flow"] = _build_auth_code_flow(scopes=app.config['SCOPE'])
@@ -214,6 +200,10 @@ def request_player_login(game_id: int = -1):
 def __play_game(game: Game, player: Player):
     if game is None or player is None:
         return
+    running = player.running_games()
+    for run in running:
+        _terminate_game(run['id'])
+
     target_dir = game.project_path
     if target_dir.joinpath('game.py').exists():
         target = target_dir.joinpath('game.py')
@@ -299,7 +289,7 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
     ).first()
 
 
-@ app.route('/upload_game', methods=['GET', 'POST'])
+@app.route('/upload_game', methods=['GET', 'POST'])
 def upload_game():
     user = current_player()
     if not user:
@@ -319,13 +309,13 @@ def upload_game():
         return render_template('upload_form.html', active='upload_game', user=user)
 
 
-@ app.route('/user', methods=['GET'])
+@app.route('/user', methods=['GET'])
 def user():
     user = current_player()
     return render_template('user.html', games=user.games, active='user', user=user)
 
 
-@ app.route('/delete', methods=['POST'])
+@app.route('/delete', methods=['POST'])
 def delete():
     user = current_player()
     if not user:
@@ -359,14 +349,44 @@ def start_game(target: Path) -> str:
     return device_id
 
 
-@ app.route("/login")
+def _terminate_game(game_play_id: str):
+    home = root.joinpath('running_games')
+    if home.joinpath(f'{game_play_id}.kill').exists():
+        os.remove(home.joinpath(f'{game_play_id}.kill'))
+    kill_game(game_play_id, force=True)
+
+
+@app.route('/terminate_game', methods=['POST'])
+def terminate_game():
+    game_play_id = request.form.get('id')
+    if len(str(game_play_id)) != 24 or not str(game_play_id).startswith('game-16'):
+        return app.response_class(status=400, response=json.dumps({'status': 'invalid request'}), mimetype='application/json')
+    user = current_player()
+    if user is None:
+        user = anonymous_player()
+    if user is None:
+        return app.response_class(status=401, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
+    if not user.admin:
+        running = list(map(lambda proc: proc['game_play_id'], running_games()))
+        if game_play_id not in running:
+            return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
+        game = user.game_play(game_play_id)
+        if game is None:
+            return app.response_class(status=401, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
+
+    _terminate_game(game_play_id)
+    time.sleep(0.5)
+    return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
+
+
+@app.route("/login")
 def login():
     if 'flow' not in session:
         session["flow"] = _build_auth_code_flow(scopes=app.config['SCOPE'])
     return render_template("login.html", auth_url=session["flow"]["auth_uri"], active='login')
 
 
-@ app.route(app.config['REDIRECT_PATH'])  # Its absolute URL must match your app's redirect_uri set in AAD
+@app.route(app.config['REDIRECT_PATH'])  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
     try:
         cache = _load_cache()
@@ -391,7 +411,7 @@ def authorized():
     return redirect('/')
 
 
-@ app.route("/logout")
+@app.route("/logout")
 def logout():
     session.clear()  # Wipe out user and its token cache from session
     return redirect(  # Also logout from your tenant's web session

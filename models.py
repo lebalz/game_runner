@@ -28,6 +28,28 @@ class Player(db.Model):
     def __repr__(self):
         return '<email {}>'.format(self.email)
 
+    def game_play(self, game_play_id: str):
+        return db.session.execute(
+            '''\
+            SELECT *
+            FROM game_plays
+            WHERE id = :gid AND player_id = :pid
+            LIMIT 1
+            ''',
+            {'gid': game_play_id, 'pid': self.email}
+        ).first()
+
+    def running_games(self):
+        return db.session.execute(
+            '''\
+            SELECT *
+            FROM game_plays
+            WHERE player_id = :pid AND end_time IS NULL
+            LIMIT 1
+            ''',
+            {'pid': self.email}
+        )
+
 
 class Game(db.Model):
     __tablename__ = 'games'

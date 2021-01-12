@@ -5,7 +5,13 @@
 >
   <div class="btn-group">
     <a href="{{ auth_url }}" class="btn btn-warning">GBSL Account</a>
-    <a href="/anonym/{{game_id}}" class="btn btn-secondary">Anonym</a>
+    <a
+      onclick="on_game_start(event, '{{game_id}}')"
+      href="/anonym/{{game_id}}"
+      data-game-id="{{game_id}}"
+      class="btn btn-secondary"
+      >Anonym</a
+    >
   </div>
 </div>
 {% endblock %}
