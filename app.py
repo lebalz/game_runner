@@ -200,9 +200,10 @@ def request_player_login(game_id: int = -1):
 def __play_game(game: Game, player: Player):
     if game is None or player is None:
         return
-    running = player.running_games()
-    for run in running:
-        _terminate_game(run['id'])
+    if player.email != ANONYMOUS_EMAIL:
+        running = player.running_games()
+        for run in running:
+            _terminate_game(run['id'])
 
     target_dir = game.project_path
     if target_dir.joinpath('game.py').exists():
@@ -360,22 +361,21 @@ def _terminate_game(game_play_id: str):
 def terminate_game():
     game_play_id = request.form.get('id')
     if len(str(game_play_id)) != 24 or not str(game_play_id).startswith('game-16'):
-        return app.response_class(status=400, response=json.dumps({'status': 'invalid request'}), mimetype='application/json')
+        return app.response_class(status=200, response=json.dumps({'status': 'invalid request'}), mimetype='application/json')
     user = current_player()
     if user is None:
         user = anonymous_player()
     if user is None:
-        return app.response_class(status=401, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
+        return app.response_class(status=200, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
     if not user.admin:
         running = list(map(lambda proc: proc['game_play_id'], running_games()))
         if game_play_id not in running:
             return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
         game = user.game_play(game_play_id)
         if game is None:
-            return app.response_class(status=401, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
+            return app.response_class(status=200, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
 
     _terminate_game(game_play_id)
-    time.sleep(0.5)
     return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
 
 

@@ -9,12 +9,7 @@
   <div class="card-body">
     <h5 class="card-title">{{game.name}}</h5>
     <p class="card-text">@{{game.authors}}</p>
-    <a
-      href="/game/{{game.id}}"
-      class="btn btn-primary"
-      onclick="on_game_start(event, '{{game.id}}')"
-      >Play</a
-    >
+    <a href="/game/{{game.id}}" class="btn btn-primary">Play</a>
     <a href="/scoreboard/{{game.id}}" class="btn btn-primary">Scoreboard</a>
   </div>
 </div>
