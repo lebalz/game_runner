@@ -52,13 +52,13 @@ class Player(db.Model):
             None
         )
 
+    @property
     def running_games(self):
         return list(
             filter(
                 lambda p: p.is_running,
                 self.game_plays
-            ),
-            None
+            )
         )
 
 

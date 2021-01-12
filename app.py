@@ -202,7 +202,7 @@ def __play_game(game: Game, player: Player, playgame_id: str = None):
     if game is None or player is None:
         return
     if player.email != ANONYMOUS_EMAIL:
-        running = player.running_games()
+        running = player.running_games
         for run in running:
             _terminate_game(run['id'])
 
