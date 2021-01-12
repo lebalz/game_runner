@@ -7,3 +7,4 @@ running
 .env
 .skip_setup
 flask_session
+static/previews/*
