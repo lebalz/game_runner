@@ -33,7 +33,7 @@ class Player(db.Model):
             '''\
             SELECT *
             FROM game_plays
-            WHERE id = :gid AND player_id = :pid
+            WHERE id = :gid AND player_email = :pid
             LIMIT 1
             ''',
             {'gid': game_play_id, 'pid': self.email}
@@ -44,7 +44,7 @@ class Player(db.Model):
             '''\
             SELECT *
             FROM game_plays
-            WHERE player_id = :pid AND end_time IS NULL
+            WHERE player_email = :pid AND end_time IS NULL
             LIMIT 1
             ''',
             {'pid': self.email}
