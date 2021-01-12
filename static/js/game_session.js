@@ -8,7 +8,7 @@ const on_game_start = (event, gameId) => {
         var xhttp = new XMLHttpRequest();
         xhttp.open("POST", "/terminate_game", true);
         xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-        xhr.send(`id=${gameId}`);
+        xhttp.send(`id=${gameId}`);
     }
     localStorage.setItem('running_game_id', current_id);
     return;
