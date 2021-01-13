@@ -40,6 +40,7 @@ socket_conn: Connector = None
 
 GREP_REGEX = re.compile(r'\bgrep\b')
 ANONYMOUS_EMAIL = 'anonymous@foo.bar'
+MAX_CONCURRENT_PLAYS = 15
 
 # important to import models AFTER initializing the app! Otherwise
 # a circular import error will be thrown
@@ -55,12 +56,10 @@ def utility_processor():
     def obfuscated_players() -> List[str]:
         global obfuscated
         if obfuscated is None:
-            print('renew obfuscated')
             raw_players = os.environ.get('OBFUSCATED_PLAYERS', '').split(';')
             sanitized = map(lambda email: email.strip(), raw_players)
             sanitized = filter(lambda email: '@' in email, sanitized)
             obfuscated = list(sanitized)
-        print('return obfuscated')
 
         return obfuscated
 
@@ -80,6 +79,14 @@ def utility_processor():
         return f'{first_name.capitalize()} {last_name.capitalize()}'
 
     return dict(obfuscated_players=obfuscated_players, mail_of=mail_of, user=current_player(), mail2name=mail2name)
+
+
+def max_concurrent_plays() -> int:
+    try:
+        max_plays = int(os.environ.get('MAX_CONCURRENT_PLAYS', MAX_CONCURRENT_PLAYS), base=10)
+        return max_plays
+    except:
+        return MAX_CONCURRENT_PLAYS
 
 
 def is_process_running(pid: Union[str, int]) -> bool:
@@ -287,6 +294,13 @@ def game_anonym():
         return redirect('/index')
 
 
+@app.route('/wait_for_start', methods=['GET'])
+def wait_for_start():
+    game_id = request.args.get('game_id')
+    running = request.args.get('running_games')
+    return render_template('wait_for_start.html', requested_game_id=game_id, running_games=running)
+
+
 @app.route('/game/<game_id>', methods=['GET'])
 def game(game_id: int = -1):
     game = get_game(game_id)
@@ -296,6 +310,9 @@ def game(game_id: int = -1):
     player = current_player()
     if not player:
         return redirect(f'/request_player_login/{game_id}')
+    running = running_games()
+    if len(running) >= max_concurrent_plays():
+        return redirect(f'/wait_for_start?game_id={game_id}&running_games={len(running)}')
     device_id = __play_game(game, player)
     if device_id:
         return redirect(f"https://io.gbsl.website/playground?device_id={device_id}&no_nav=true", code=302)
