@@ -395,6 +395,9 @@ def upload_game():
 
 @app.route('/user', methods=['GET'])
 def user():
+    user = current_player()
+    if user is None:
+        return redirect('/')
     return render_template('user.html', games=user.games, active='user')
 
 
