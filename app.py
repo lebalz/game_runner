@@ -13,6 +13,7 @@ from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from smartphone_connector import Connector
 from smartphone_connector.types import DataMsg, Device
+from sqlalchemy import func, desc
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
@@ -196,7 +197,8 @@ def admin():
         ORDER BY game_plays.start_time DESC
         LIMIT 100
     ''')
-    return render_template('admin.html', running_games=running, active='admin', users=Player.query.all(), game_plays=game_plays)
+    users = Player.query.order_by(desc(Player.created)).all()
+    return render_template('admin.html', running_games=running, active='admin', users=users, game_plays=game_plays)
 
 
 @app.route('/running_games')
