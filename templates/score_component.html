@@ -26,14 +26,13 @@
       <ul class="dropdown-menu">
         {% if user and user.can_rate(game.id) %} {% for i in range(5) %}
         <li onclick="on_vote(event, {{game.id}}, {{i + 1}})">
-          <a
+          <div
             class="dropdown-item {{'active' if user.rating_score(game.id) == i + 1 else ''}}"
-            href="#"
           >
             {% for s in range(i+1) %}
             <i class="fas fa-star" style="color: gold"></i>
             {% endfor %}
-          </a>
+          </div>
         </li>
         {% endfor %} {% else %}
         <li>
