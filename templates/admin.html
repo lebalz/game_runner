@@ -63,6 +63,7 @@
     <thead>
       <tr>
         <th scope="col">ID</th>
+        <th scope="col">Time</th>
         <th scope="col">Game</th>
         <th scope="col">Player</th>
         <th scope="col">Score</th>
@@ -72,6 +73,7 @@
       {% for gp in game_plays %}
       <tr>
         <td>{{gp['id']}}</td>
+        <td>{{gp['start_time']}}</td>
         <td>{{gp['game']}}</td>
         <td>{{gp['player_email']}}</td>
         <td>{{gp['score']}}</td>

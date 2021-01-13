@@ -133,6 +133,7 @@ def admin():
     game_plays = db.session.execute('''\
         SELECT
             game_plays.id as id,
+            game_plays.start_time as start_time,
             games.name as game,
             game_plays.player_email as player_email,
             game_plays.score as score
