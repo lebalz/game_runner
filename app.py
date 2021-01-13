@@ -35,6 +35,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 
 active_clients: set = set()
+active_scripts: set = set()
 active_games: dict = {}
 socket_conn: Connector = None
 
@@ -119,15 +120,27 @@ def on_client_devices(devices: List[Device]):
                         f.write(str(os.getpid()))
 
     clients = set(map(lambda d: d['device_id'], filter(lambda d: d['is_client'], devices)))
-    removed = active_clients - clients
-    new = clients - active_clients
-    active_clients.update(new)
-    for rm in removed:
-        print('kill', rm, active_games.keys())
+    scripts = set(map(lambda d: d['device_id'], filter(lambda d: not d['is_client'], devices)))
+    removed_clients = active_clients - clients
+    new_clients = clients - active_clients
+    active_clients.update(new_clients)
+
+    removed_scripts = active_scripts - scripts
+    new_scripts = scripts - removed_scripts
+    active_scripts.update(new_scripts)
+    for rm in removed_clients:
+        print('kill', rm)
         if rm in active_games:
             print('alive: ', active_games[rm]['process'].is_alive())
         active_clients.remove(rm)
         kill_game(rm)
+    # stop play sessions after crash of script
+    for rm in removed_scripts:
+        active_scripts.remove(rm)
+        ps = play_session(rm)
+        if ps and not ps.end_time:
+            ps.end_time = dt.now()
+            db.session.commit()
 
 
 def on_highscore(data: DataMsg):
