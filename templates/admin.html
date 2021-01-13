@@ -57,6 +57,29 @@
     </tbody>
   </table>
 </div>
+<h1>Latest Game Plays</h1>
+<div class="table-responsive">
+  <table class="table table-striped table-hover table-sm">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Game</th>
+        <th scope="col">Player</th>
+        <th scope="col">Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gp in game_plays %}
+      <tr>
+        <td>{{gp['id']}}</td>
+        <td>{{gp['game']}}</td>
+        <td>{{gp['player_email']}}</td>
+        <td>{{gp['score']}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"></script>
 <script>
   setInterval(() => {

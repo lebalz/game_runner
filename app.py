@@ -130,7 +130,18 @@ def admin():
     if not user or not user.admin:
         return redirect('/')
     running = running_games()
-    return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all())
+    game_plays = db.session.execute('''\
+        SELECT
+            game_plays.id as id,
+            games.name as game,
+            game_plays.player_email as player_email,
+            game_plays.score as score
+        FROM game_plays
+            INNER JOIN games ON game_plays.game_id = games.id
+        ORDER BY game_plays.start_time DESC
+        LIMIT 100
+    ''')
+    return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all(), game_plays=game_plays)
 
 
 @app.route('/running_games')
