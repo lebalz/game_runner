@@ -25,7 +25,7 @@
       </button>
       <ul class="dropdown-menu">
         {% if user and user.can_rate(game.id) %} {% for i in range(5) %}
-        <li onclick="on_vote(event, {{game.id}}, {{i + 1}})">
+        <li ontouchstart="on_vote(event, {{game.id}}, {{i + 1}})" onclick="on_vote(event, {{game.id}}, {{i + 1}})">
           <div
             class="dropdown-item {{'active' if user.rating_score(game.id) == i + 1 else ''}}"
           >
@@ -36,7 +36,7 @@
         </li>
         {% endfor %} {% else %}
         <li>
-          <a class="dropdown-item" href="#">You need to play this game first</a>
+          <a class="dropdown-item">You need to play this game first</a>
         </li>
 
         {% endif %}
