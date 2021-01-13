@@ -19,10 +19,7 @@
       {% for play in scoreboard %}
       <tr class="{{'bg-warning' if loop.index == 1 else ''}}">
         <td>{{loop.index}}</td>
-        <td>
-          {{play['player_email'].split('.')[0].capitalize() + ' '}}
-          {{play['player_email'].split('@')[0].split('.')[-1].capitalize()}}
-        </td>
+        <td>{{mail2name(play['player_email']}}</td>
         <td>{{play['highscore']}}</td>
         <td>{{play['plays']}}</td>
         <td>{{play['play_time']}}</td>

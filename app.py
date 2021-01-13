@@ -46,6 +46,42 @@ ANONYMOUS_EMAIL = 'anonymous@foo.bar'
 from models import Game, Player, GamePlay, Rating
 
 
+obfuscated = None
+
+
+@app.context_processor
+def utility_processor():
+
+    def obfuscated_players() -> List[str]:
+        global obfuscated
+        if obfuscated is None:
+            print('renew obfuscated')
+            raw_players = os.environ.get('OBFUSCATED_PLAYERS', '').split(';')
+            sanitized = map(lambda email: email.strip(), raw_players)
+            sanitized = filter(lambda email: '@' in email, sanitized)
+            obfuscated = list(sanitized)
+        print('return obfuscated')
+
+        return obfuscated
+
+    def mail_of(mail: str) -> str:
+        if mail in obfuscated_players():
+            return 'magic.42@work.ch'
+        return mail
+
+    def mail2name(mail: str) -> str:
+        mail = mail_of(mail)
+        if '@' not in mail:
+            return mail
+        name = mail.split('@')[0]
+        if '.' not in name:
+            return name
+        first_name, last_name = name.split('.')
+        return f'{first_name.capitalize()} {last_name.capitalize()}'
+
+    return dict(obfuscated_players=obfuscated_players, mail_of=mail_of, user=current_player(), mail2name=mail2name)
+
+
 def is_process_running(pid: Union[str, int]) -> bool:
     processes = os.popen(f'/bin/ps -p {pid}').read()
     return len(list(filter(lambda l: l.strip().startswith(str(pid)), processes.splitlines())))
@@ -111,17 +147,15 @@ def setup(force: bool = False):
 
 @app.route('/')
 def home():
-    user = current_player()
     games = Game.ordered_by_rating(limit=18)
 
-    return render_template('home.html', user=user, active='home', games=games)
+    return render_template('home.html', active='home', games=games)
 
 
 @app.route('/index')
 def index():
     games = Game.ordered_by_rating()
-    user = current_player()
-    return render_template('index.html', games=games, active='index', user=user)
+    return render_template('index.html', games=games, active='index')
 
 
 @app.route('/admin')
@@ -142,7 +176,7 @@ def admin():
         ORDER BY game_plays.start_time DESC
         LIMIT 100
     ''')
-    return render_template('admin.html', running_games=running, active='admin', user=user, users=Player.query.all(), game_plays=game_plays)
+    return render_template('admin.html', running_games=running, active='admin', users=Player.query.all(), game_plays=game_plays)
 
 
 @app.route('/running_games')
@@ -181,7 +215,7 @@ def scoreboard(game_id: int = -1):
         GROUP BY player_email
         ORDER BY max(score) DESC
     ''', {'gid': game_id})
-    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, user=current_player())
+    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game)
 
 
 @app.route('/most_played')
@@ -201,7 +235,7 @@ def most_played():
         GROUP BY games.id
         ORDER BY sum(extract(epoch from (end_time-start_time))) DESC;
     ''')
-    return render_template('most_played.html', result=result, active='most_played', user=current_player())
+    return render_template('most_played.html', result=result, active='most_played')
 
 
 @app.route('/request_player_login/<game_id>', methods=['GET'])
@@ -326,13 +360,12 @@ def upload_game():
         extract_game(db_game.project_path, game, db_game.preview_img)
         return redirect('/index')
     else:
-        return render_template('upload_form.html', active='upload_game', user=user)
+        return render_template('upload_form.html', active='upload_game')
 
 
 @app.route('/user', methods=['GET'])
 def user():
-    user = current_player()
-    return render_template('user.html', games=user.games, active='user', user=user)
+    return render_template('user.html', games=user.games, active='user')
 
 
 @app.route('/delete', methods=['POST'])
@@ -420,6 +453,8 @@ def terminate_game():
             return app.response_class(status=200, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
 
     _terminate_game(game_play_id)
+    if request.form.get('admin_redirect', default=None):
+        return redirect('/admin')
     return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
 
 

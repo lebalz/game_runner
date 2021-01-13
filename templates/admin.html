@@ -27,6 +27,7 @@
         <td>
           <form action="/terminate_game" method="POST">
             <input type="hidden" name="id" value="{{game['game_play_id']}}" />
+            <input type="hidden" name="admin_redirect" value="true" />
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-trash"></i>
             </button>
@@ -75,7 +76,7 @@
         <td>{{gp['id']}}</td>
         <td>{{gp['start_time']}}</td>
         <td>{{gp['game']}}</td>
-        <td>{{gp['player_email']}}</td>
+        <td>{{mail_of(gp['player_email'])}}</td>
         <td>{{gp['score']}}</td>
       </tr>
       {% endfor %}
