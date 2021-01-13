@@ -259,7 +259,7 @@ def __play_game(game: Game, player: Player, playgame_id: str = None):
     if player.email != ANONYMOUS_EMAIL:
         running = player.running_games
         for run in running:
-            _terminate_game(run['id'])
+            _terminate_game(run.id)
 
     target_dir = game.project_path
     if target_dir.joinpath('game.py').exists():
