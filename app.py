@@ -159,6 +159,8 @@ def on_highscore(data: DataMsg):
 
 def setup(force: bool = False):
     global socket_conn
+    if force and socket_conn is not None:
+        socket_conn.disconnect()
     with open(root.joinpath('running'), 'w') as f:
         f.write(str(os.getpid()))
     socket_conn = Connector('https://io.gbsl.website', '__GAME_RUNNER__')
@@ -467,6 +469,15 @@ def game_vote():
         db.session.add(r)
     db.session.commit()
     return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
+
+
+@app.route('/reconnect', methods=['POST'])
+def reconnect():
+    user = current_player()
+    if user is None or not user.admin:
+        return redirect('/')
+    setup(force=True)
+    return redirect('/admin')
 
 
 @app.route('/terminate_game', methods=['POST'])
