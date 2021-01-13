@@ -19,6 +19,7 @@ load_dotenv(find_dotenv())
 root = Path(__file__).parent
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
+# app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -111,13 +112,14 @@ def setup(force: bool = False):
 @app.route('/')
 def home():
     user = current_player()
-    games = Game.query.limit(18).all()
+    games = Game.ordered_by_rating(limit=18)
+
     return render_template('home.html', user=user, active='home', games=games)
 
 
 @app.route('/index')
 def index():
-    games = Game.query.all()
+    games = Game.ordered_by_rating()
     user = current_player()
     return render_template('index.html', games=games, active='index', user=user)
 
@@ -260,7 +262,6 @@ def play_session(device_id: str) -> Union[GamePlay, None]:
 
 
 def current_player() -> Union[Player, None]:
-    # return anonymous_player()
     email = session.get('email')
     if not email:
         return None

@@ -1,5 +1,5 @@
-from typing import Union
-from sqlalchemy import event
+from typing import Literal, Union
+from sqlalchemy import func, desc
 from app import db
 from datetime import datetime as dt
 from pathlib import Path
@@ -16,8 +16,8 @@ class Player(db.Model):
     email = db.Column(db.String(50), primary_key=True)
     admin = db.Column(db.Boolean, index=False, unique=False, nullable=False, server_default='true', default=True)
     games = db.relationship('Game', backref='players', lazy=True)
-    game_plays = db.relationship('GamePlay', backref='game_plays', lazy=False)
-    ratings = db.relationship('Rating', backref='players', lazy=False)
+    game_plays = db.relationship('GamePlay', backref='game_plays', lazy=True)
+    ratings = db.relationship('Rating', backref='players', lazy=True)
 
     created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
 
@@ -83,6 +83,14 @@ class Game(db.Model):
 
     def __repr__(self):
         return '<email {}>'.format(self.email)
+
+    def ordered_by_rating(limit: int = None, direction: Literal['asc', 'desc'] = 'desc'):
+        query = Game.query.join(Rating, Rating.game_id == Game.id, isouter=True)\
+            .group_by(Game.id)\
+            .order_by(desc(func.avg(Rating.rating)))
+        if limit is not None:
+            query = query.limit(limit)
+        return query
 
     @property
     def project_path(self) -> Path:
