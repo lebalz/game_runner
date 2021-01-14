@@ -1,6 +1,7 @@
 from rungame import create_game, extract_game, running_games
 import shutil
 import os
+import requests
 from typing import List, Union
 from flask import Flask, request, render_template, redirect, session, url_for, json
 from flask_migrate import Migrate
@@ -9,6 +10,8 @@ from pathlib import Path
 import time
 import re
 import msal
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from smartphone_connector import Connector
@@ -50,6 +53,20 @@ from models import Game, Player, GamePlay, Rating
 
 
 obfuscated = None
+
+
+def check_gamerunner_status():
+    host = os.environ.get('HOST_URL', 'http://127.0.0.1:5000/')
+    while host.endswith('/'):
+        host = host[:-1]
+    requests.get(f'{host}/status').content
+
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(check_gamerunner_status, 'interval', seconds=2)
+sched.start()
+# Shutdown your cron thread if the web process is stopped
+atexit.register(lambda: sched.shutdown(wait=False))
 
 
 @app.context_processor
@@ -469,6 +486,21 @@ def game_vote():
         db.session.add(r)
     db.session.commit()
     return app.response_class(status=200, response=json.dumps({'status': '200'}), mimetype='application/json')
+
+
+@app.route('/status', methods=['GET'])
+def status():
+    try:
+        if socket_conn is not None and socket_conn.sio.connected:
+            socket_conn.send({'type': 'status', 'status': 'ok'})
+        else:
+            setup(force=True)
+            if socket_conn is not None:
+                socket_conn.send({'type': 'status', 'status': 'reconnected'})
+    except Exception as inst:
+        return app.response_class(status=400, response=json.dumps({'status': 400, 'exception': type(inst), 'msg': str(inst)}), mimetype='application/json')
+
+    return app.response_class(status=200, response=json.dumps({'status': 'ok'}), mimetype='application/json')
 
 
 @app.route('/reconnect', methods=['POST'])

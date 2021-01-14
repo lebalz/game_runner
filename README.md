@@ -48,6 +48,7 @@ dokku apps:create game-runner
 dokku domains:add game-runner "your.domain.com"
 dokku config:set --no-restart game-runner APP_SETTINGS=config.ProductionConfig
 dokku config:set --no-restart game-runner MAX_CONCURRENT_PLAYS=15
+dokku config:set --no-restart game-runner HOST_URL=https://game.foo.ch
 
 # enable upload sizes up to 20mb
 mkdir /home/dokku/game-runner/nginx.conf.d
