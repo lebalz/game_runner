@@ -45,7 +45,9 @@ socket_conn: Connector = None
 
 GREP_REGEX = re.compile(r'\bgrep\b')
 ANONYMOUS_EMAIL = 'anonymous@foo.bar'
-MAX_CONCURRENT_PLAYS = 15
+MAX_CONCURRENT_PLAYS = 15  # overwritten by env when present
+STATUS_INTERVAL = 15    # all <STATUS_INTERVAL> seconds a get request is sent to /status
+
 
 # important to import models AFTER initializing the app! Otherwise
 # a circular import error will be thrown
@@ -63,7 +65,7 @@ def check_gamerunner_status():
 
 
 sched = BackgroundScheduler(daemon=True)
-sched.add_job(check_gamerunner_status, 'interval', seconds=2)
+sched.add_job(check_gamerunner_status, 'interval', seconds=STATUS_INTERVAL)
 sched.start()
 # Shutdown your cron thread if the web process is stopped
 atexit.register(lambda: sched.shutdown(wait=False))
