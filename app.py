@@ -115,60 +115,70 @@ def is_process_running(pid: Union[str, int]) -> bool:
     return len(list(filter(lambda l: l.strip().startswith(str(pid)), processes.splitlines())))
 
 
-def kill_game(device_id: str, force: bool = False):
+def kill_game(device_id: str, force: bool = False, commit: bool = True):
+    print('start killing ', device_id)
     ps = play_session(device_id)
     home = root.joinpath('running_games')
     if not force and not home.joinpath(f'{device_id}.py').exists():
         return
     home.joinpath(f'{device_id}.kill').touch()
+    print('touch killer ', device_id)
+
     if ps and not ps.end_time:
+        print('end session ', device_id)
         ps.end_time = dt.now()
-        db.session.commit()
+        if commit:
+            db.session.commit()
 
 
 def on_client_devices(devices: List[Device]):
-    if root.joinpath('running').exists():
-        with open(root.joinpath('running'), 'r') as f:
-            current_pid = f.read().strip()
-            if current_pid != str(os.getpid()):
-                if is_process_running(current_pid):
-                    print('disconnecting from socketio server: ', os.getpid())
-                    socket_conn.disconnect()
-                    return
-                else:
-                    with open(root.joinpath('running'), 'w') as f:
-                        f.write(str(os.getpid()))
-
-    clients = set(map(lambda d: d['device_id'], filter(lambda d: d['is_client'], devices)))
-    scripts = set(map(lambda d: d['device_id'], filter(lambda d: not d['is_client'], devices)))
+    # if root.joinpath('running').exists():
+    #     with open(root.joinpath('running'), 'r') as f:
+    #         current_pid = f.read().strip()
+    #         if current_pid != str(os.getpid()):
+    #             if is_process_running(current_pid):
+    #                 print('disconnecting from socketio server: ', os.getpid())
+    #                 socket_conn.disconnect()
+    #                 return
+    #             else:
+    #                 with open(root.joinpath('running'), 'w') as f:
+    #                     f.write(str(os.getpid()))
+    raw = filter(lambda d: d['device_id'].startswith('game-'), devices)
+    clients = set(map(lambda d: d['device_id'], filter(lambda d: d['is_client'], raw)))
+    scripts = set(map(lambda d: d['device_id'], filter(lambda d: not d['is_client'], raw)))
     removed_clients = active_clients - clients
     new_clients = clients - active_clients
     active_clients.update(new_clients)
 
     removed_scripts = active_scripts - scripts
-    new_scripts = scripts - removed_scripts
+    new_scripts = scripts - active_clients
     active_scripts.update(new_scripts)
+
     for rm in removed_clients:
         print('kill', rm)
         if rm in active_games:
             print('alive: ', active_games[rm]['process'].is_alive())
         active_clients.remove(rm)
-        kill_game(rm)
+        kill_game(rm, commit=False)
     # stop play sessions after crash of script
     for rm in removed_scripts:
+        print('removed script ', rm)
         active_scripts.remove(rm)
         ps = play_session(rm)
         if ps and not ps.end_time:
+            print('end session ', rm)
             ps.end_time = dt.now()
-            db.session.commit()
+    db.session.commit()
 
 
 def on_highscore(data: DataMsg):
     if data.type == 'report_score':
-        if 'device_id' not in data or 'score' not in data:
+        if ('device_id' not in data) or ('score' not in data):
+            print('no score found: ', data)
             return
         game_play = get_game_play(data.device_id)
-        if not game_play:
+        if game_play is None:
+            print('no gameplay found: ', data.device_id)
             return
         score = int(data.score)
         if score > game_play.score:
@@ -190,7 +200,6 @@ def setup(force: bool = False):
 @app.route('/')
 def home():
     games = Game.ordered_by_rating(limit=18)
-
     return render_template('home.html', active='home', games=games)
 
 
@@ -606,6 +615,7 @@ if root.joinpath('.skip_setup').exists():
     os.remove(root.joinpath('.skip_setup'))
 else:
     setup()
+
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
