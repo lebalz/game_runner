@@ -269,7 +269,7 @@ def demo_page():
 @app.route('/api/v1/running_games')
 def fetch_running_games():
     running = running_games()
-    game_play_ids = ','.join(map(lambda r: f"'{r['game_play_ids']}'", running))
+    game_play_ids = ','.join(map(lambda r: f"'{r['game_play_id']}'", running))
     result = db.session.execute('''\
         SELECT id, game_id, player_email
         FROM game_plays
