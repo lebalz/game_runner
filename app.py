@@ -293,7 +293,7 @@ def scoreboard(game_id: int = -1):
             player_email,
             max(score) as highscore,
             count(id) as plays,
-            ROUND(sum(extract(epoch from (end_time-start_time))) / 60, 1) as play_time
+            sum(extract(epoch from (end_time-start_time))) / 60 as play_time
         FROM game_plays
         WHERE game_id = :gid AND player_email != '{ANONYMOUS_EMAIL}'
         GROUP BY player_email
@@ -302,7 +302,7 @@ def scoreboard(game_id: int = -1):
     player = current_player()
     if player:
         my_plays = db.session.execute(f'''\
-            SELECT *, ROUND(extract(epoch from (end_time-start_time)) / 60, 1) as play_time
+            SELECT *, extract(epoch from (end_time-start_time)) / 60 as play_time
             FROM game_plays
             WHERE game_id = :gid AND player_email = :uid
             ORDER BY start_time DESC
@@ -318,11 +318,11 @@ def most_played():
         SELECT
             games.name AS name,
             games.authors AS authors,
-            ROUND(sum(extract(epoch from (end_time-start_time))) / 60, 1) as duration,
+            sum(extract(epoch from (end_time-start_time))) / 60 as duration,
             count(game_plays.id) AS count,
             avg(ratings.rating) AS rating,
             max(game_plays.score) AS max_score,
-            ROUND(max(extract(epoch from (end_time-start_time))) / 60, 1) AS max_duration
+            max(extract(epoch from (end_time-start_time))) / 60 AS max_duration
         FROM games
             INNER JOIN game_plays ON games.id = game_plays.game_id
             LEFT JOIN ratings ON games.id = ratings.id
