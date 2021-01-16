@@ -48,6 +48,8 @@
       </div>
     </div>
     <script>
+      let currentId = "";
+      let startTime = 0;
       setInterval(() => {
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
@@ -55,11 +57,14 @@
             const live = document.querySelector("#live-preview");
             const newGames = JSON.parse(this.responseText);
             const newPids = newGames.map((game) => game.pid).sort();
-            const gpids = newGames
-              .map((game) => _.escape(game.game_play_id))
-              .sort();
+            const gpids = newGames.map((game) => game.game_play_id).sort();
+            if (gpids.includes(currentId) && Date.now() - startTime < 30) {
+              return;
+            }
             const previewId = gpids[gpids.length - 1];
             if (previewId) {
+              currentId = previewId;
+              startTime = Date.now();
               const iframe = document.createElement("iframe");
               iframe.src =
                 "https://io.gbsl.website/playground?device_id=${previewId}&silent=1";
@@ -71,7 +76,7 @@
         };
         xhttp.open("GET", "/running_games", true);
         xhttp.send();
-      }, 20000);
+      }, 1000);
     </script>
   </body>
 </html>
