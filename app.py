@@ -61,6 +61,10 @@ def log(type: str, msg: str, game_play_id: str = None):
     msg = LogMessage(msg_type=type, msg=msg, game_play_id=game_play_id)
     db.session.add(msg)
     db.session.commit()
+    db.session.execute('''\
+    DELETE FROM log_messages
+    WHERE created_at < :twelve_hours_ago
+    ''', {'twelve_hours_ago': (dt.datetime.now() - dt.timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S')})
 
 
 def check_gamerunner_status():
