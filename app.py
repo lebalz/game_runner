@@ -270,14 +270,13 @@ def demo_page():
 def fetch_running_games():
     running = running_games()
     game_play_ids = ','.join(map(lambda r: f"'{r['game_play_id']}'", running))
-    result = db.session.execute('''\
+    result = db.session.execute(f'''\
         SELECT id, game_id, player_email
         FROM game_plays
-        WHERE id IN (:ids)
-    ''', {'ids': game_play_ids})
+        WHERE id IN ({game_play_ids})
+    ''')
     for row in result:
-        id = row['id']
-        run = next(filter(lambda x: x['game_play_id'] == id, running))
+        run = next(filter(lambda x: x['game_play_id'] == row['id'], running))
         run['game_id'] = row['game_id']
         run['player_email'] = row['player_email']
     response = app.response_class(
