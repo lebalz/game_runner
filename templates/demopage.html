@@ -39,7 +39,7 @@
       <div class="live">
         <div id="live-preview">Live Preview</div>
       </div>
-      <div class="score">Score</div>
+      <div class="score" id="scoreboard">Score</div>
       <div class="qr">
         <img
           src="/static/images/game_qr.svg"
@@ -55,14 +55,17 @@
         xhttp.onreadystatechange = function () {
           if (this.readyState == 4 && this.status == 200) {
             const live = document.querySelector("#live-preview");
+            const scoreboardElement = document.querySelector("#scoreboard");
             const newGames = JSON.parse(this.responseText);
-            const newPids = newGames.map((game) => game.pid).sort();
             const gpids = newGames.map((game) => game.game_play_id).sort();
             if (gpids.includes(currentId) && Date.now() - startTime < 30000) {
               return;
             }
-            const previewId = gpids[gpids.length - 1];
-            if (previewId) {
+            const latestGame = newGames.sort((a, b) =>
+              a.game_play_id > b.game_play_id ? -1 : 1
+            )[0];
+            if (latestGame) {
+              const previewId = latestGame.game_play_id;
               currentId = previewId;
               startTime = Date.now();
               const iframe = document.createElement("iframe");
@@ -70,12 +73,19 @@
               iframe.frameBorder = 0;
               iframe.id = "live-preview";
               live.replaceWith(iframe);
+
+              /* scoreboard */
+              const scoreboard = document.createElement("iframe");
+              scoreboard.src = `/scoreboard/${latestGame.game_id}`;
+              scoreboard.frameBorder = 0;
+              scoreboard.id = "scoreboard";
+              scoreboardElement.replaceWith(scoreboard);
             }
           }
         };
-        xhttp.open("GET", "/running_games", true);
+        xhttp.open("GET", "/api/v1/running_games", true);
         xhttp.send();
-      }, 1000);
+      }, 2000);
     </script>
   </body>
 </html>

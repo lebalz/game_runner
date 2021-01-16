@@ -266,9 +266,20 @@ def demo_page():
     return render_template('demopage.html')
 
 
-@app.route('/running_games')
+@app.route('/api/v1/running_games')
 def fetch_running_games():
     running = running_games()
+    game_play_ids = ','.join(map(lambda r: f"'{r['game_play_ids']}'", running))
+    result = db.session.execute('''\
+        SELECT id, game_id, player_email
+        FROM game_plays
+        WHERE id IN (:ids)
+    ''', {'ids': game_play_ids})
+    for row in result:
+        id = row['id']
+        run = next(filter(lambda x: x['game_play_ids'] == id, running))
+        run['game_id'] = row['game_id']
+        run['player_email'] = row['player_email']
     response = app.response_class(
         response=json.dumps(running),
         status=200,

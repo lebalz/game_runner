@@ -21,7 +21,9 @@
     <thead>
       <tr>
         <th scope="col">PID</th>
-        <th scope="col">Name</th>
+        <th scope="col">ID</th>
+        <th scope="col">Player</th>
+        <th scope="col">Game</th>
         <th scope="col">Join</th>
         <th scope="col">Löschen</th>
       </tr>
@@ -31,6 +33,12 @@
       <tr>
         <td class="pid">{{game['pid']}}</td>
         <td>{{game['game_play_id']}}</td>
+        <td>{{mail2name(game['player_email'])}}</td>
+        <td>
+          <a href="/scoreboard/{{game['game_id']}}" target="_blank"
+            >{{game['game_id']}}</a
+          >
+        </td>
         <td>
           <a
             href="https://io.gbsl.website/playground?device_id={{game['game_play_id']}}&silent=1"
@@ -143,7 +151,7 @@
         }
       }
     };
-    xhttp.open("GET", "/running_games", true);
+    xhttp.open("GET", "/api/v1/running_games", true);
     xhttp.send();
     var xhttp2 = new XMLHttpRequest();
     xhttp2.onreadystatechange = function () {
