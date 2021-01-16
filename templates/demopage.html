@@ -58,7 +58,7 @@
             const newGames = JSON.parse(this.responseText);
             const newPids = newGames.map((game) => game.pid).sort();
             const gpids = newGames.map((game) => game.game_play_id).sort();
-            if (gpids.includes(currentId) && Date.now() - startTime < 30) {
+            if (gpids.includes(currentId) && Date.now() - startTime < 30000) {
               return;
             }
             const previewId = gpids[gpids.length - 1];
@@ -66,8 +66,7 @@
               currentId = previewId;
               startTime = Date.now();
               const iframe = document.createElement("iframe");
-              iframe.src =
-                "https://io.gbsl.website/playground?device_id=${previewId}&silent=1";
+              iframe.src = `https://io.gbsl.website/playground?device_id=${previewId}&silent=1`;
               iframe.frameBorder = 0;
               iframe.id = "live-preview";
               live.replaceWith(iframe);
