@@ -456,8 +456,7 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
 
 @app.route('/upload_game', methods=['GET', 'POST'])
 def upload_game():
-    user = anonymous_player()
-    # user = current_player()
+    user = current_player()
     if not user:
         return redirect(url_for("login"))
 
@@ -465,8 +464,9 @@ def upload_game():
         player = current_player()
         name = request.form.get('name')[:32]
         game = request.files.get('game')
+        description = request.files.get('description')
         authors = request.form.get('authors')[:64]
-        db_game = Game(player, name, authors)
+        db_game = Game(player, name, authors, description)
         db.session.add(db_game)
         db.session.commit()
         extract_game(db_game.project_path, game, db_game.preview_img)
