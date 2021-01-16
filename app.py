@@ -288,9 +288,14 @@ def fetch_running_games():
     return response
 
 
-@app.route('/scoreboard/<game_id>')
-def scoreboard(game_id: int = -1):
+@app.route('/scoreboard')
+def scoreboard():
+    game_id = request.args.get('game_id', type=int)
+    no_nav = request.args.get('no_nav')
+    compact = request.args.get('compact')
     game = get_game(game_id)
+    if game is None:
+        return redirect('/')
     rating = db.session.execute('''\
         SELECT ROUND(avg(rating), 1) as rating, count(id) as count
         FROM ratings
@@ -320,7 +325,15 @@ def scoreboard(game_id: int = -1):
         ''', {'gid': game_id, 'uid': player.email})
     else:
         my_plays = None
-    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, my_plays=my_plays)
+    return render_template(
+        'scoreboard.html',
+        scoreboard=scoreboard,
+        rating=rating,
+        game=game,
+        my_plays=my_plays,
+        no_nav=no_nav,
+        compact=compact
+    )
 
 
 @app.route('/most_played')

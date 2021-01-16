@@ -23,6 +23,8 @@ input:required:valid {
 }
 #demopage > .score {
   grid-area: score;
+  position: relative;
+  overflow: hidden;
 }
 #demopage > .live {
   grid-area: live;
@@ -33,6 +35,15 @@ input:required:valid {
   grid-area: qr;
 }
 #demopage > .live > iframe {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+#demopage > .score > iframe {
   position: absolute;
   width: 100%;
   height: 100%;

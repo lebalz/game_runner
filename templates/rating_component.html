@@ -12,6 +12,7 @@
   {% else %}
   <div class="flex-fill"></div>
   {% endif %}
+  {% if compact is not defined or not compact %}
   <div class="score-container d-flex justify-content-end">
     <div class="btn-group">
       <button
@@ -43,4 +44,6 @@
       </ul>
     </div>
   </div>
+  {% endif %}
+
 </div>

@@ -63,6 +63,9 @@
             if (gpids.includes(currentId) && Date.now() - startTime < 30000) {
               return;
             }
+            if (gpids.length === 1 && gpids[0] === currentId) {
+              return;
+            }
             const latestGame = newGames.sort((a, b) =>
               a.game_play_id > b.game_play_id ? -1 : 1
             )[0];
@@ -78,7 +81,7 @@
 
               /* scoreboard */
               const scoreboard = document.createElement("iframe");
-              scoreboard.src = `/scoreboard/${latestGame.game_id}`;
+              scoreboard.src = `/scoreboard?game_id=${latestGame.game_id}&no_nav=1&compact=1`;
               scoreboard.frameBorder = 0;
               scoreboard.id = "scoreboard";
               scoreboardElement.replaceWith(scoreboard);

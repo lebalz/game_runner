@@ -1,7 +1,9 @@
 <div class="card" style="margin: 1em">
   <div class="card-header">
-    {% include 'score_component.html' %}
+    {% include 'rating_component.html' %} {% if compact is not defined or not
+    compact %}
     <span class="badge bg-warning text-dark">Rating: {{rating['rating']}}</span>
+    {% endif %}
   </div>
   <div class="card-body">
     <h5 class="card-title">{{game.name}} by <i>{{game.authors}}</i></h5>
@@ -20,6 +22,8 @@
       />
       {% endif %}
     </div>
+    {% if compact is not defined or not compact %}
     <a href="/game/{{game.id}}" class="btn btn-primary">Play</a>
+    {% endif %}
   </div>
 </div>

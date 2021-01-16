@@ -32,6 +32,7 @@
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
   </head>
   <body>
+    {% if no_nav is not defined or not no_nav %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
         <a class="navbar-brand" href="/"
@@ -118,6 +119,6 @@
         </div>
       </div>
     </nav>
-    {% block body %}{% endblock %}
+    {% endif %} {% block body %}{% endblock %}
   </body>
 </html>
