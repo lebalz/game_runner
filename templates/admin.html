@@ -146,7 +146,7 @@
     xhttp.open("GET", "/running_games", true);
     xhttp.send();
     var xhttp2 = new XMLHttpRequest();
-    xhttp2.onreadystatechange = () => {
+    xhttp2.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         const log = document.querySelector("#run-log");
         const logText = JSON.parse(this.responseText);
