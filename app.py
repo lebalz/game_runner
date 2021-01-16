@@ -292,15 +292,15 @@ def scoreboard(game_id: int = -1):
         GROUP BY player_email
         ORDER BY max(score) DESC
     ''', {'gid': game_id})
-    user = current_player()
-    if user:
+    player = current_player()
+    if player:
         my_plays = db.session.execute(f'''\
             SELECT *, extract(epoch from (end_time-start_time)) / 60 as play_time
             FROM game_plays
             WHERE game_id = :gid AND player_email = :uid
             ORDER BY start_time DESC
-        ''', {'gid': game_id, 'uid': user.email})
-        max_score = max(map(lambda p: p['score'], my_plays))
+        ''', {'gid': game_id, 'uid': player.email})
+        max_score = -1  # max(map(lambda p: p['score'], my_plays))
     else:
         my_plays = None
         max_score = -1
