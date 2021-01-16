@@ -145,7 +145,7 @@ def kill_game(device_id: str, force: bool = False, commit: bool = True):
 
 def on_client_devices(devices: List[Device]):
     raw = filter(lambda d: d['device_id'].startswith('game-'), devices)
-    raw = filter(lambda d: 'silent' not in d or not d['is_silent'], raw)
+    raw = filter(lambda d: 'is_silent' not in d or not d['is_silent'], raw)
     clients = set(map(lambda d: d['device_id'], filter(lambda d: d['is_client'], raw)))
     scripts = set(map(lambda d: d['device_id'], filter(lambda d: not d['is_client'], raw)))
     removed_clients = active_clients - clients
