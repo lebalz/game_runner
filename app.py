@@ -303,11 +303,9 @@ def scoreboard(game_id: int = -1):
             WHERE game_id = :gid AND player_email = :uid
             ORDER BY start_time DESC
         ''', {'gid': game_id, 'uid': player.email})
-        max_score = max(map(lambda p: p['score'], my_plays))
     else:
         my_plays = None
-        max_score = -1
-    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, my_plays=my_plays, max_score=max_score)
+    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, my_plays=my_plays)
 
 
 @app.route('/most_played')

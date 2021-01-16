@@ -67,9 +67,7 @@
     </thead>
     <tbody>
       {% for play in my_plays %}
-      <tr
-        class="{{'bg-warning' if play['score'] == max_score else ''}} {{'table-primary' if user and play['player_email'] == user.email else ''}}"
-      >
+      <tr>
         <td>{{loop.index}}</td>
         <td>{{play['start_time']}}</td>
         <td>{{play['play_time']}}</td>
