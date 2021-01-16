@@ -186,3 +186,18 @@ class Rating(db.Model):
 
     def __repr__(self):
         return '<email {}>'.format(self.email)
+
+
+class LogMessage(db.Model):
+    __tablename__ = 'log_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    msg_type = db.Column(db.String(32), index=True, nullable=False)
+    game_play_id = db.Column(db.String(24), index=False, nullable=True)
+    msg = db.Column(db.String(256), index=False, nullable=False)
+
+    def __init__(self, msg_type: str, msg: str, game_play_id: str = None):
+        self.msg = msg
+        self.msg_type = msg_type
+        self.created_at = dt.now()
+        self.game_play_id = game_play_id

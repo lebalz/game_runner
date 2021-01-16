@@ -1,4 +1,4 @@
-smartphone_connector==0.0.110
+smartphone_connector==0.0.111
 python-socketio==4.6.0
 websocket-client==0.57.0
 urllib3==1.25.10

@@ -8,7 +8,15 @@
   </button>
 </form>
 
-<div class="table-responsive">
+<div style="max-height: 300px; overflow-y: auto">
+  <pre>
+    <code id="run-log">
+      LOGS
+    </code>
+  </pre>
+</div>
+
+<div class="table-responsive" style="max-height: 250px">
   <table class="table table-striped table-hover table-sm">
     <thead>
       <tr>
@@ -46,7 +54,7 @@
 </div>
 
 <h1>Users</h1>
-<div class="table-responsive">
+<div class="table-responsive" style="max-height: 350px">
   <table class="table table-striped table-hover table-sm">
     <thead>
       <tr>
@@ -137,6 +145,16 @@
     };
     xhttp.open("GET", "/running_games", true);
     xhttp.send();
+    var xhttp2 = new XMLHttpRequest();
+    xhttp2.onreadystatechange = () => {
+      if (this.readyState == 4 && this.status == 200) {
+        const log = document.querySelector("#run-log");
+        const logText = JSON.parse(this.responseText);
+        log.innerHTML = logText.log;
+      }
+    };
+    xhttp2.open("GET", "/python_logs", true);
+    xhttp2.send();
   }, 1500);
 </script>
 {% endblock %}

@@ -16,7 +16,7 @@ from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from smartphone_connector import Connector
 from smartphone_connector.types import DataMsg, Device
-from sqlalchemy import func, desc
+from sqlalchemy import desc
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
@@ -51,10 +51,16 @@ STATUS_INTERVAL = 15    # all <STATUS_INTERVAL> seconds a get request is sent to
 
 # important to import models AFTER initializing the app! Otherwise
 # a circular import error will be thrown
-from models import Game, Player, GamePlay, Rating
+from models import Game, LogMessage, Player, GamePlay, Rating
 
 
 obfuscated = None
+
+
+def log(type: str, msg: str, game_play_id: str = None):
+    msg = LogMessage(msg_type=type, msg=msg, game_play_id=game_play_id)
+    db.session.add(msg)
+    db.session.commit()
 
 
 def check_gamerunner_status():
@@ -116,33 +122,22 @@ def is_process_running(pid: Union[str, int]) -> bool:
 
 
 def kill_game(device_id: str, force: bool = False, commit: bool = True):
-    print('start killing ', device_id)
+    log('app:kill', 'start killing', device_id)
     ps = play_session(device_id)
     home = root.joinpath('running_games')
     if not force and not home.joinpath(f'{device_id}.py').exists():
         return
     home.joinpath(f'{device_id}.kill').touch()
-    print('touch killer ', device_id)
+    log('app:kill', 'touch killer', device_id)
 
     if ps and not ps.end_time:
-        print('end session ', device_id)
+        log('app:kill', 'end session', device_id)
         ps.end_time = dt.now()
         if commit:
             db.session.commit()
 
 
 def on_client_devices(devices: List[Device]):
-    # if root.joinpath('running').exists():
-    #     with open(root.joinpath('running'), 'r') as f:
-    #         current_pid = f.read().strip()
-    #         if current_pid != str(os.getpid()):
-    #             if is_process_running(current_pid):
-    #                 print('disconnecting from socketio server: ', os.getpid())
-    #                 socket_conn.disconnect()
-    #                 return
-    #             else:
-    #                 with open(root.joinpath('running'), 'w') as f:
-    #                     f.write(str(os.getpid()))
     raw = filter(lambda d: d['device_id'].startswith('game-'), devices)
     clients = set(map(lambda d: d['device_id'], filter(lambda d: d['is_client'], raw)))
     scripts = set(map(lambda d: d['device_id'], filter(lambda d: not d['is_client'], raw)))
@@ -155,18 +150,18 @@ def on_client_devices(devices: List[Device]):
     active_scripts.update(new_scripts)
 
     for rm in removed_clients:
-        print('kill', rm)
+        log('socketio:kill', 'clientside', rm)
+
         if rm in active_games:
             print('alive: ', active_games[rm]['process'].is_alive())
         active_clients.remove(rm)
         kill_game(rm, commit=False)
     # stop play sessions after crash of script
     for rm in removed_scripts:
-        print('removed script ', rm)
+        log('socketio:kill', 'scriptside', rm)
         active_scripts.remove(rm)
         ps = play_session(rm)
         if ps and not ps.end_time:
-            print('end session ', rm)
             ps.end_time = dt.now()
     db.session.commit()
 
@@ -186,6 +181,10 @@ def on_highscore(data: DataMsg):
             db.session.commit()
 
 
+def on_timer(data):
+    log('socketio:timer', f'{data["time"]}')
+
+
 def setup(force: bool = False):
     global socket_conn
     if force and socket_conn is not None:
@@ -195,6 +194,7 @@ def setup(force: bool = False):
     socket_conn = Connector('https://io.gbsl.website', '__GAME_RUNNER__')
     socket_conn.on_devices = on_client_devices
     socket_conn.on_data = on_highscore
+    socket_conn.on_timer = on_timer
 
 
 @app.route('/')
@@ -229,6 +229,25 @@ def admin():
     ''')
     users = Player.query.order_by(desc(Player.created)).all()
     return render_template('admin.html', running_games=running, active='admin', users=users, game_plays=game_plays)
+
+
+@app.route('/python_logs')
+def fetch_python_logs():
+    user = current_player()
+    if not user or not user.admin:
+        return app.response_class(response=json.dumps({}), status=200, mimetype='application/json')
+    runlog = root.joinpath('run_state.log')
+    if runlog.exists():
+        with open(runlog, 'r') as f:
+            content = f.read()
+    else:
+        content = 'No log found'
+    response = app.response_class(
+        response=json.dumps({'log': content}),
+        status=200,
+        mimetype='application/json'
+    )
+    return response
 
 
 @app.route('/running_games')
@@ -378,6 +397,10 @@ def current_player() -> Union[Player, None]:
     ).first()
 
 
+def latest_log_message(type: str) -> Union[LogMessage, None]:
+    return LogMessage.query.filter(LogMessage.msg_type == type).order_by(desc(LogMessage.created_at)).first()
+
+
 def anonymous_player() -> Union[Player, None]:
     player = Player.query.filter(
             Player.email == ANONYMOUS_EMAIL
@@ -501,15 +524,15 @@ def game_vote():
 
 @app.route('/status', methods=['GET'])
 def status():
-    try:
-        if socket_conn is not None and socket_conn.sio.connected:
-            socket_conn.send({'type': 'status', 'status': 'ok'})
-        else:
-            setup(force=True)
-            if socket_conn is not None:
-                socket_conn.send({'type': 'status', 'status': 'reconnected'})
-    except Exception as inst:
+    timer = latest_log_message('socketio:timer')
+    if timer is None:
         return app.response_class(status=400, response=json.dumps({'status': 400, 'exception': type(inst), 'msg': str(inst)}), mimetype='application/json')
+
+    if (dt.now() - timer.created_at).total_seconds() > STATUS_INTERVAL:
+        setup(force=True)
+        log('app:status', 'reconnected')
+    else:
+        log('app:status', 'ok')
 
     return app.response_class(status=200, response=json.dumps({'status': 'ok'}), mimetype='application/json')
 
