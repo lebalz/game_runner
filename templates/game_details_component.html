@@ -1,0 +1,25 @@
+<div class="card" style="margin: 1em">
+  <div class="card-header">
+    {% include 'score_component.html' %}
+    <span class="badge bg-warning text-dark">Rating: {{rating['rating']}}</span>
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">{{game.name}} by <i>{{game.authors}}</i></h5>
+    <div
+      class="score-container d-flex justify-content-between align-items-center"
+    >
+      {% if game.description.strip() != '' %}
+      <p class="card-text">{{game.description}}</p>
+      {% else %}
+      <p class="card-text"></p>
+      {% endif %} {% if game.preview_img_url %}
+      <img
+        src="{{game.preview_img_url}}"
+        height="150"
+        style="border-radius: 5px"
+      />
+      {% endif %}
+    </div>
+    <a href="/game/{{game.id}}" class="btn btn-primary">Play</a>
+  </div>
+</div>

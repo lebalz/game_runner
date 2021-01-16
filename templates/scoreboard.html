@@ -1,59 +1,8 @@
 {% extends 'base.html' %} {% block body %}
 
 <h1>Scoreboard {{game.name}}</h1>
-<div class="card" style="margin: 1em">
-  <div class="card-header">
-    {% include 'score_component.html' %}
-    <span class="badge bg-warning text-dark">Rating: {{rating['rating']}}</span>
-  </div>
-  <div class="card-body">
-    <h5 class="card-title">{{game.name}} by <i>{{game.authors}}</i></h5>
-    <div
-      class="score-container d-flex justify-content-between align-items-center"
-    >
-      {% if game.description.strip() != '' %}
-      <p class="card-text">{{game.description}}</p>
-      {% else %}
-      <p class="card-text"></p>
-      {% endif %} {% if game.preview_img_url %}
-      <img
-        src="{{game.preview_img_url}}"
-        height="150"
-        style="border-radius: 5px"
-      />
-      {% endif %}
-    </div>
-    <a href="/game/{{game.id}}" class="btn btn-primary">Play</a>
-  </div>
-</div>
-
-<div class="table-responsive" style="max-height: 250px">
-  <table class="table table-striped table-hover table-sm">
-    <thead>
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">Name</th>
-        <th scope="col">Score</th>
-        <th scope="col">Plays</th>
-        <th scope="col">Playtime (min)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for play in scoreboard %}
-      <tr
-        class="{{'bg-warning' if loop.index == 1 else ''}}  {{'table-primary' if user and play['player_email'] == user.email else ''}}"
-      >
-        <td>{{loop.index}}</td>
-        <td>{{mail2name(play['player_email'])}}</td>
-        <td>{{play['highscore']}}</td>
-        <td>{{play['plays']}}</td>
-        <td>{{play['play_time']}}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% if my_plays %}
+{% include 'game_details_component.html'%} {% include
+'scoreboard_component.html' %} {% if my_plays %}
 <h1>My Plays</h1>
 <div class="table-responsive" style="max-height: 250px">
   <table class="table table-striped table-hover table-sm">

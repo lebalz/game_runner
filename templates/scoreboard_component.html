@@ -1,0 +1,26 @@
+<div class="table-responsive" style="max-height: 250px">
+  <table class="table table-striped table-hover table-sm">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Name</th>
+        <th scope="col">Score</th>
+        <th scope="col">Plays</th>
+        <th scope="col">Playtime (min)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for play in scoreboard %}
+      <tr
+        class="{{'bg-warning' if loop.index == 1 else ''}}  {{'table-primary' if user and play['player_email'] == user.email else ''}}"
+      >
+        <td>{{loop.index}}</td>
+        <td>{{mail2name(play['player_email'])}}</td>
+        <td>{{play['highscore']}}</td>
+        <td>{{play['plays']}}</td>
+        <td>{{play['play_time']}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
