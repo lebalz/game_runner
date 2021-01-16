@@ -5,7 +5,7 @@ import requests
 from typing import List, Union
 from flask import Flask, request, render_template, redirect, session, url_for, json
 from flask_migrate import Migrate
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 from pathlib import Path
 import time
 import re
@@ -64,7 +64,7 @@ def log(type: str, msg: str, game_play_id: str = None):
     db.session.execute('''\
     DELETE FROM log_messages
     WHERE created_at < :twelve_hours_ago
-    ''', {'twelve_hours_ago': (dt.datetime.now() - dt.timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S')})
+    ''', {'twelve_hours_ago': (dt.now() - timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S')})
 
 
 def check_gamerunner_status():
@@ -553,7 +553,7 @@ def game_vote():
 def status():
     timer = latest_log_message('socketio:timer')
     if timer is None:
-        return app.response_class(status=400, response=json.dumps({'status': 400, 'exception': type(inst), 'msg': str(inst)}), mimetype='application/json')
+        return app.response_class(status=400, response=json.dumps({'status': 400, 'msg': 'no timer last timer msg found'}), mimetype='application/json')
 
     if (dt.now() - timer.created_at).total_seconds() > STATUS_INTERVAL:
         setup(force=True)
