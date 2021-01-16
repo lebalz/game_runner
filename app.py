@@ -277,7 +277,7 @@ def fetch_running_games():
     ''', {'ids': game_play_ids})
     for row in result:
         id = row['id']
-        run = next(filter(lambda x: x['game_play_ids'] == id, running))
+        run = next(filter(lambda x: x['game_play_id'] == id, running))
         run['game_id'] = row['game_id']
         run['player_email'] = row['player_email']
     response = app.response_class(
