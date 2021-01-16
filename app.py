@@ -105,7 +105,13 @@ def utility_processor():
         first_name, last_name = name.split('.')
         return f'{first_name.capitalize()} {last_name.capitalize()}'
 
-    return dict(obfuscated_players=obfuscated_players, mail_of=mail_of, user=current_player(), mail2name=mail2name)
+    return dict(
+        obfuscated_players=obfuscated_players,
+        mail_of=mail_of,
+        user=current_player(),
+        mail2name=mail2name,
+        len=len
+    )
 
 
 def max_concurrent_plays() -> int:
