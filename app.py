@@ -16,7 +16,7 @@ from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from smartphone_connector import Connector
 from smartphone_connector.types import DataMsg, Device
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
@@ -286,7 +286,19 @@ def scoreboard(game_id: int = -1):
         GROUP BY player_email
         ORDER BY max(score) DESC
     ''', {'gid': game_id})
-    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game)
+    user = current_player()
+    if user:
+        my_plays = db.session.execute(f'''\
+            SELECT *, extract(epoch from (end_time-start_time)) / 60 as play_time
+            FROM game_plays
+            WHERE game_id = :gid AND player_email = '{user.email}'
+            ORDER BY start_time DESC
+        ''', {'gid': game_id})
+        max_score = max(map(lambda p: p['score'], my_plays))
+    else:
+        my_plays = []
+        max_score = -1
+    return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, my_plays=my_plays, max_score=max_score)
 
 
 @app.route('/most_played')

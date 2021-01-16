@@ -1,10 +1,12 @@
 <div class="card">
   {% if game.preview_img_url %}
-  <img
-    src="{{game.preview_img_url}}"
-    class="card-img-top"
-    style="height: 180px; object-fit: cover; object-position: 50% 0%"
-  />
+  <a href="/scoreboard/{{game.id}}">
+    <img
+      src="{{game.preview_img_url}}"
+      class="card-img-top"
+      style="height: 180px; object-fit: cover; object-position: 50% 0%"
+    />
+  </a>
   {% endif %}
   <div class="card-body">
     <h5 class="card-title">{{game.name}}</h5>
