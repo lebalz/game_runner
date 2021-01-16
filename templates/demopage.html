@@ -36,7 +36,9 @@
       <div class="header">
         <h1>Game Runner</h1>
       </div>
-      <div class="live">Live</div>
+      <div class="live">
+        <div id="live-preview">Live Preview</div>
+      </div>
       <div class="score">Score</div>
       <div class="qr">
         <img
@@ -45,5 +47,31 @@
         />
       </div>
     </div>
+    <script>
+      setInterval(() => {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+            const live = document.querySelector("#live-preview");
+            const newGames = JSON.parse(this.responseText);
+            const newPids = newGames.map((game) => game.pid).sort();
+            const gpids = newGames
+              .map((game) => _.escape(game.game_play_id))
+              .sort();
+            const previewId = gpids[gpids.length - 1];
+            if (previewId) {
+              const iframe = document.createElement("iframe");
+              iframe.src =
+                "https://io.gbsl.website/playground?device_id=${previewId}&silent=1";
+              iframe.frameBorder = 0;
+              iframe.id = "live-preview";
+              live.replaceWith(iframe);
+            }
+          }
+        };
+        xhttp.open("GET", "/running_games", true);
+        xhttp.send();
+      }, 20000);
+    </script>
   </body>
 </html>

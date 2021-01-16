@@ -263,9 +263,6 @@ def demo_page():
 
 @app.route('/running_games')
 def fetch_running_games():
-    user = current_player()
-    if not user or not user.admin:
-        return app.response_class(response=json.dumps({}), status=200, mimetype='application/json')
     running = running_games()
     response = app.response_class(
         response=json.dumps(running),

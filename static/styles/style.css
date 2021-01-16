@@ -22,11 +22,22 @@ input:required:valid {
   grid-area: header;
 }
 #demopage > .score {
-  grid-area: header;
+  grid-area: score;
 }
 #demopage > .live {
   grid-area: live;
+  position: relative;
+  overflow: hidden;
 }
 #demopage > .qr {
   grid-area: qr;
+}
+#demopage > .live > iframe {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
 }
