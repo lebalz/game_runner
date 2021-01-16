@@ -31,6 +31,23 @@
       />
       <div id="authorsHelp" class="form-text">Name of the Game Programmers</div>
     </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea
+        type="text"
+        class="form-control"
+        id="description"
+        name="description"
+        aria-describedby="descriptionHelp"
+        placeholder="Short Description"
+        maxlength="1024"
+        required
+      ></textarea>
+      <div id="descriptionHelp" class="form-text">
+        A short description how to play the game and what the goal of your game
+        is (some #hashtags might be enough).
+      </div>
+    </div>
     <div>
       <label for="game" class="form-label">Game (.zip or .py)</label>
       <input

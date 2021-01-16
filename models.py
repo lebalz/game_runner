@@ -69,17 +69,19 @@ class Game(db.Model):
     name = db.Column(db.String(32), index=True, unique=False, nullable=False)
     authors = db.Column(db.String(64), index=False, unique=False, nullable=False)
     created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    description = db.Column(db.Text, unique=False, nullable=False, default='', server_default='')
     preview_img = db.Column(db.String(27), index=False, unique=True, nullable=False)
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
     plays = db.relationship('GamePlay', backref='plays', lazy=True, cascade="all, delete")
     ratings = db.relationship('Rating', backref='ratings', lazy=False, cascade="all, delete")
 
-    def __init__(self, player: Player, name: str, authors: str):
+    def __init__(self, player: Player, name: str, authors: str, description: str):
         self.name = name
         self.authors = authors
         self.player_email = player.email
         self.created = dt.now()
         self.preview_img = f'preview-{time.time_ns()}'
+        self.description = description
 
     def __repr__(self):
         return '<email {}>'.format(self.email)

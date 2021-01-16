@@ -303,7 +303,7 @@ def scoreboard(game_id: int = -1):
             WHERE game_id = :gid AND player_email = :uid
             ORDER BY start_time DESC
         ''', {'gid': game_id, 'uid': player.email})
-        max_score = -1  # max(map(lambda p: p['score'], my_plays))
+        max_score = max(map(lambda p: p['score'], my_plays))
     else:
         my_plays = None
         max_score = -1
@@ -454,7 +454,8 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
 
 @app.route('/upload_game', methods=['GET', 'POST'])
 def upload_game():
-    user = current_player()
+    user = anonymous_player()
+    # user = current_player()
     if not user:
         return redirect(url_for("login"))
 
