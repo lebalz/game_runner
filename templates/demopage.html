@@ -34,7 +34,10 @@
   <body>
     <div id="demopage">
       <div class="header">
-        <h1>Game Runner</h1>
+        <h1>
+          <i class="fas fa-gamepad fa-spin" style="color: red"></i>
+          Game Runner
+        </h1>
       </div>
       <div class="live">
         <div id="live-preview">Live Preview</div>
@@ -43,15 +46,26 @@
         <div id="scoreboard">Live Preview</div>
       </div>
       <div class="qr">
-        <img
-          src="/static/images/game_qr.svg"
-          style="min-width: 0; min-height: 0; height: 100%; width: 100%"
-        />
+        <div
+          class="d-flex justify-content-between align-items-center"
+          style="height: 100%; width: 100%"
+        >
+          <div>
+            <p>Python Game Projects</p>
+          </div>
+          <img
+            src="/static/images/game_qr.svg"
+            style="min-width: 0; min-height: 0; height: 100%; margin-right: 1em"
+          />
+        </div>
       </div>
     </div>
     <script>
       let currentId = "";
       let startTime = 0;
+      let placeholderRequested = false;
+      let cancelPlaceholderRequest = false;
+      let placeholderStartTime = 0;
       setInterval(() => {
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
@@ -70,6 +84,9 @@
               a.game_play_id > b.game_play_id ? -1 : 1
             )[0];
             if (latestGame) {
+              if (placeholderRequested) {
+                cancelPlaceholderRequest = true;
+              }
               const previewId = latestGame.game_play_id;
               currentId = previewId;
               startTime = Date.now();
@@ -85,6 +102,35 @@
               scoreboard.frameBorder = 0;
               scoreboard.id = "scoreboard";
               scoreboardElement.replaceWith(scoreboard);
+            } else if (
+              !placeholderRequested &&
+              Date.now() - placeholderStartTime > 30000
+            ) {
+              placeholderRequested = true;
+              var highlight = new XMLHttpRequest();
+              highlight.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                  placeholderStartTime = Date.now();
+                  if (cancelPlaceholderRequest) {
+                    cancelPlaceholderRequest = false;
+                    return;
+                  }
+                  const containers = ["live-preview", "scoreboard"];
+                  const ids = JSON.parse(this.responseText);
+                  for (var i = 0; i < ids.length; i++) {
+                    const elemId = containers[i];
+                    const highlight = document.querySelector(`#${elemId}`);
+                    const newHighlight = document.createElement("iframe");
+                    newHighlight.src = `/scoreboard?game_id=${ids[i].id}&no_nav=1&compact=1`;
+                    newHighlight.frameBorder = 0;
+                    newHighlight.id = elemId;
+                    highlight.replaceWith(newHighlight);
+                  }
+                  placeholderRequested = false;
+                }
+              };
+              highlight.open("GET", "/api/v1/random_game_id?count=2");
+              highlight.send();
             }
           }
         };

@@ -266,9 +266,29 @@ def demo_page():
     return render_template('demopage.html')
 
 
+@app.route('/api/v1/random_game_id')
+def get_random_game_id():
+    limit = request.args.get('count', type=int)
+    if limit is None:
+        limit = 1
+    result = db.session.execute('SELECT id FROM games order by random() limit :limit', {'limit': limit})
+    ids = []
+    for r in result:
+        ids.append({'id': r['id']})
+    return app.response_class(
+        response=json.dumps(ids),
+        status=200,
+        mimetype='application/json'
+    )
+
+
 @app.route('/api/v1/running_games')
 def fetch_running_games():
-    running = running_games()
+    try:
+        running = running_games()
+    except:
+        running = []
+
     if len(running) > 0:
         game_play_ids = ','.join(map(lambda r: f"'{r['game_play_id']}'", running))
         result = db.session.execute(f'''\
