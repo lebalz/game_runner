@@ -302,7 +302,7 @@ def scoreboard(game_id: int = -1):
         ''', {'gid': game_id, 'uid': user.email})
         max_score = max(map(lambda p: p['score'], my_plays))
     else:
-        my_plays = []
+        my_plays = None
         max_score = -1
     return render_template('scoreboard.html', scoreboard=scoreboard, rating=rating, game=game, my_plays=my_plays, max_score=max_score)
 
