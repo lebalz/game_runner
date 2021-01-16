@@ -256,6 +256,11 @@ def fetch_python_logs():
     return response
 
 
+@app.route('/demo')
+def demo_page():
+    return render_template('demopage.html')
+
+
 @app.route('/running_games')
 def fetch_running_games():
     user = current_player()
