@@ -291,9 +291,9 @@ def scoreboard(game_id: int = -1):
         my_plays = db.session.execute(f'''\
             SELECT *, extract(epoch from (end_time-start_time)) / 60 as play_time
             FROM game_plays
-            WHERE game_id = :gid AND player_email = '{user.email}'
+            WHERE game_id = :gid AND player_email = :uid
             ORDER BY start_time DESC
-        ''', {'gid': game_id})
+        ''', {'gid': game_id, 'uid': user.email})
         max_score = max(map(lambda p: p['score'], my_plays))
     else:
         my_plays = []
