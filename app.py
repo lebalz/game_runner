@@ -349,6 +349,9 @@ def game_anonym():
     playgame_id = request.args.get('playgame_id')
     if game_id is None or playgame_id is None:
         return redirect('/index')
+    if get_game_play(game_id) is not None:
+        return redirect(f'/game/{game_id}')
+
     game = get_game(game_id)
     player = anonymous_player()
     device_id = __play_game(game, player, playgame_id=playgame_id)
