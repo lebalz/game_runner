@@ -110,7 +110,7 @@ import os
 with open('/home/{game_runner()}/{device_id}.kill.pid', 'w') as f:
     f.write(str(os.getpid()))
 {indent}{var_name} = Connector("https://io.gbsl.website", "{device_id}")
-
+{indent}{var_name}.sleep(0.2) # add some time to connect in case of an error later in the script
 def __shutdown():
     {var_name}.disconnect()
     exit()
@@ -127,6 +127,8 @@ def __check_running_state():
 '''
         new_text = CONNECTOR_NAME_REGEX.sub(replacement, raw)
         cancel_subscriptions_regex = re.compile(f'(?P<indent>\s*){var_name}.cancel_async_subscriptions\(\)')
+
+        # \g<intdent> directly capture&inserts the matched ?P<indent>
         new_text = cancel_subscriptions_regex.sub(
             f'''\
 \g<indent>{var_name}.cancel_async_subscriptions()
