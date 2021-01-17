@@ -77,11 +77,15 @@ def log(type: str, msg: str, game_play_id: str = None, update_latest: bool = Fal
     # ''', {'twelve_hours_ago': (dt.now() - timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S')})
 
 
-def check_gamerunner_status():
+def get_host():
     host = os.environ.get('HOST_URL', 'http://127.0.0.1:5000/')
     while host.endswith('/'):
         host = host[:-1]
-    requests.get(f'{host}/status').content
+    return host
+
+
+def check_gamerunner_status():
+    requests.get(f'{get_host()}/status').content
 
 
 sched = BackgroundScheduler(daemon=True)
@@ -190,7 +194,7 @@ def on_client_devices(devices: List[Device]):
 def on_highscore(data: DataMsg):
     if data.type == 'report_score':
         res = requests.post(
-            '/api/v1/report_score',
+            f'{get_host()}/api/v1/report_score',
             json={
                 'score': int(data.score),
                 'game_play_id': data.device_id,
