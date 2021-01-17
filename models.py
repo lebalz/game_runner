@@ -1,5 +1,6 @@
 from typing import Literal, Union
 from sqlalchemy import func, desc
+from sqlalchemy.sql import func as func_t
 from app import db
 from datetime import datetime as dt
 from pathlib import Path
@@ -193,7 +194,8 @@ class Rating(db.Model):
 class LogMessage(db.Model):
     __tablename__ = 'log_messages'
     id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
+    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
     msg_type = db.Column(db.String(32), index=True, nullable=False)
     game_play_id = db.Column(db.String(24), index=False, nullable=True)
     msg = db.Column(db.String(256), index=False, nullable=False)
@@ -202,4 +204,5 @@ class LogMessage(db.Model):
         self.msg = msg
         self.msg_type = msg_type
         self.created_at = dt.now()
+        self.updated_at = dt.now()
         self.game_play_id = game_play_id

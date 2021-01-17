@@ -3,7 +3,7 @@ import shutil
 import os
 import requests
 from typing import List, Union
-from flask import Flask, request, render_template, redirect, session, url_for, json
+from flask import Flask, request, render_template, redirect, session, url_for, json, jsonify
 from flask_migrate import Migrate
 from datetime import datetime as dt, timedelta
 from pathlib import Path
@@ -57,7 +57,17 @@ from models import Game, LogMessage, Player, GamePlay, Rating
 obfuscated = None
 
 
-def log(type: str, msg: str, game_play_id: str = None):
+def log(type: str, msg: str, game_play_id: str = None, update_latest: bool = False):
+    if update_latest:
+        model = latest_log_message(type)
+        if model is None:
+            model = LogMessage(msg_type=type, msg=msg, game_play_id=game_play_id)
+            db.session.add(model)
+        model.updated_at = dt.now()
+        model.msg = msg
+        model.game_play_id = game_play_id
+        db.session.commit()
+        return
     msg = LogMessage(msg_type=type, msg=msg, game_play_id=game_play_id)
     db.session.add(msg)
     db.session.commit()
@@ -179,21 +189,20 @@ def on_client_devices(devices: List[Device]):
 
 def on_highscore(data: DataMsg):
     if data.type == 'report_score':
-        if ('device_id' not in data) or ('score' not in data):
-            print('no score found: ', data)
-            return
-        game_play = get_game_play(data.device_id)
-        if game_play is None:
-            print('no gameplay found: ', data.device_id)
-            return
-        score = int(data.score)
-        if score > game_play.score:
-            game_play.score = score
-            db.session.commit()
+        res = requests.post(
+            '/api/v1/report_score',
+            json={
+                'score': int(data.score),
+                'game_play_id': data.device_id,
+                'secret': os.environ.get('SECRET_KEY')
+            }
+        )
+        if not res.ok:
+            log('socketio:score', 'could not report score!')
 
 
 def on_timer(data):
-    log('socketio:timer', f'{data["time"]}')
+    log('socketio:timer', f'{data["time"]}', update_latest=True)
 
 
 def setup(force: bool = False):
@@ -306,6 +315,41 @@ def fetch_running_games():
         mimetype='application/json'
     )
     return response
+
+
+@app.route('/api/v1/reconnect', methods=['POST'])
+def reconnect():
+    user = current_player()
+    if user is None or not user.admin:
+        content = request.get_json(silent=True)
+        if content is None:
+            return redirect('/')
+        secret = content.get('secret', 'not-secret')
+        if secret != os.environ.get('SECRET_KEY'):
+            return jsonify({'status': 'failed'})
+        setup(force=True)
+        return jsonify({'status': 'ok'})
+
+    setup(force=True)
+    return redirect('/admin')
+
+
+@app.route('/api/v1/report_score', methods=['POST'])
+def report_score():
+    content = request.get_json(silent=True)
+    if content is None:
+        return jsonify({'status': 'failed'})
+    secret = content.get('secret', 'not-secret')
+    if secret != os.environ.get('SECRET_KEY'):
+        return jsonify({'status': 'failed'})
+
+    score = content.get('score')
+    game_play_id = content.get('game_play_id')
+    game_play = get_game_play(game_play_id)
+    if game_play and not game_play.end_time and game_play.score < score:
+        game_play.score = score
+        db.session.commit()
+    return jsonify({'status': 'ok'})
 
 
 @app.route('/scoreboard')
@@ -599,22 +643,14 @@ def status():
     if timer is None:
         return app.response_class(status=400, response=json.dumps({'status': 400, 'msg': 'no timer last timer msg found'}), mimetype='application/json')
 
-    if (dt.now() - timer.created_at).total_seconds() > STATUS_INTERVAL:
-        setup(force=True)
-        log('app:status', 'reconnected')
-    else:
-        log('app:status', 'ok')
+    if (dt.now() - timer.updated_at).total_seconds() > STATUS_INTERVAL:
+        res = requests.post('/api/v1/reconnect', json={'secret': os.environ.get('SECRET_KEY')})
+        if res.ok:
+            log('app:status', 'reconnected')
+        else:
+            log('app:status', 'failed to reconnect')
 
-    return app.response_class(status=200, response=json.dumps({'status': 'ok'}), mimetype='application/json')
-
-
-@app.route('/reconnect', methods=['POST'])
-def reconnect():
-    user = current_player()
-    if user is None or not user.admin:
-        return redirect('/')
-    setup(force=True)
-    return redirect('/admin')
+    return jsonify({'status': 'ok'})
 
 
 @app.route('/terminate_game', methods=['POST'])
