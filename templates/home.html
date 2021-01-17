@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% block body %}
 <h1>Game Runner</h1>
-<div class="container">
+<div class="container-fluid">
   <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for game in games %}
     <div class="col">{% include 'game_card.html' %}</div>
