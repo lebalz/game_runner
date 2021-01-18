@@ -555,6 +555,8 @@ def upload_game():
         description = request.form.get('description')
         authors = request.form.get('authors')[:64]
         db_game = Game(player, name, authors, description)
+        db.session.add(db_game)
+        db.session.commit()
         extract_game(db_game.project_path, game, db_game.preview_img)
         if db_game.py_game_path:
             with open(db_game.py_game_path, 'r') as f:
@@ -563,9 +565,10 @@ def upload_game():
                     db_game.has_reporting = True
                 else:
                     db_game.has_reporting = False
-            db.session.add(db_game)
-
+        else:
+            db.session.delete(db_game)
             db.session.commit()
+
         return redirect('/index')
     else:
         return render_template('upload_form.html', active='upload_game')
