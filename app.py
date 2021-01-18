@@ -556,7 +556,7 @@ def upload_game():
         player = current_player()
         name = request.form.get('name')[:32]
         game = request.files.get('game')
-        description = request.files.get('description')
+        description = request.form.get('description')
         authors = request.form.get('authors')[:64]
         db_game = Game(player, name, authors, description)
         db.session.add(db_game)
