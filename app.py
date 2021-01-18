@@ -202,7 +202,8 @@ def on_highscore(data: DataMsg):
             }
         )
         if not res.ok:
-            log('socketio:score', 'could not report score!')
+            log('socketio:score',
+                f'could not report score! {data.score}: {json.dumps(res.json())}', game_play_id=data.device_id)
 
 
 def on_timer(data):
@@ -342,7 +343,7 @@ def reconnect():
 def report_score():
     content = request.get_json(silent=True)
     if content is None:
-        return jsonify({'status': 'failed'})
+        return jsonify({'status': 'no content'})
     secret = content.get('secret', 'not-secret')
     if secret != os.environ.get('SECRET_KEY'):
         return jsonify({'status': 'failed'})
@@ -572,7 +573,11 @@ def user():
     user = current_player()
     if user is None:
         return redirect('/')
-    return render_template('user.html', games=user.games, active='user')
+    if user.admin:
+        games = Game.ordered_by_rating()
+    else:
+        games = user.games
+    return render_template('user.html', games=games, active='user')
 
 
 @app.route('/delete', methods=['POST'])
@@ -584,7 +589,7 @@ def delete():
     game = get_game(game_id)
     if not game:
         return redirect('/user')
-    if game.player_email != user.email:
+    if game.player_email != user.email and not user.admin:
         return redirect('/')
 
     if game.project_path.exists():

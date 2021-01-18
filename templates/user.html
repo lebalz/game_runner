@@ -7,6 +7,7 @@
     <thead>
       <tr>
         <th scope="col">Name</th>
+        <th scope="col">Author</th>
         <th scope="col">Erstellt am</th>
         <th scope="col">Spielen</th>
         <th scope="col">Löschen</th>
@@ -16,6 +17,7 @@
       {% for game in games %}
       <tr>
         <td>{{game.name}}</td>
+        <td>{{game.player_email}}</td>
         <td>{{game.created}}</td>
         <td><a href="/game/{{game.id}}">Spielen</a></td>
         <td>
