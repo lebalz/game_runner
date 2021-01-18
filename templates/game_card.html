@@ -12,7 +12,7 @@
     <h5 class="card-title">{{game.name}}</h5>
     {% include 'rating_component.html' %} {% if not game.has_reporting %}
     <div>
-      <span class="badge bg-error text-dark">No Reporting</span>
+      <span class="badge bg-danger text-dark">No Score Reporting</span>
     </div>
     {% endif %}
     <p class="card-text">@{{game.authors}}</p>

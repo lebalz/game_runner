@@ -3,6 +3,10 @@
     {% include 'rating_component.html' %} {% if compact is not defined or not
     compact %}
     <span class="badge bg-warning text-dark">Rating: {{rating['rating']}}</span>
+    {% endif %} {% if not game.has_reporting %}
+    <div>
+      <span class="badge bg-danger text-dark">No Score Reporting</span>
+    </div>
     {% endif %}
   </div>
   <div class="card-body">
