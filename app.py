@@ -47,7 +47,7 @@ GREP_REGEX = re.compile(r'\bgrep\b')
 ANONYMOUS_EMAIL = 'anonymous@foo.bar'
 MAX_CONCURRENT_PLAYS = 15  # overwritten by env when present
 STATUS_INTERVAL = 15    # all <STATUS_INTERVAL> seconds a get request is sent to /status
-
+HAS_REPORT_REGEX = re.compile(r'\.report\(')
 
 # important to import models AFTER initializing the app! Otherwise
 # a circular import error will be thrown
@@ -440,14 +440,9 @@ def __play_game(game: Game, player: Player, playgame_id: str = None):
         running = player.running_games
         for run in running:
             _terminate_game(run.id)
-
-    target_dir = game.project_path
-    if target_dir.joinpath('game.py').exists():
-        target = target_dir.joinpath('game.py')
-    else:
-        target = next(target_dir.glob('*.py'), None)
-        if target is None:
-            return
+    target = game.py_game_path
+    if target is None:
+        return
     device_id = start_game(target, device_id=playgame_id)
     game_play = GamePlay(
         player,
@@ -560,9 +555,17 @@ def upload_game():
         description = request.form.get('description')
         authors = request.form.get('authors')[:64]
         db_game = Game(player, name, authors, description)
-        db.session.add(db_game)
-        db.session.commit()
         extract_game(db_game.project_path, game, db_game.preview_img)
+        if db_game.py_game_path:
+            with open(db_game.py_game_path, 'r') as f:
+                raw = f.read()
+                if HAS_REPORT_REGEX.search(raw):
+                    db_game.has_reporting = True
+                else:
+                    db_game.has_reporting = False
+            db.session.add(db_game)
+
+            db.session.commit()
         return redirect('/index')
     else:
         return render_template('upload_form.html', active='upload_game')

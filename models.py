@@ -15,7 +15,7 @@ class Player(db.Model):
     __tablename__ = 'players'
 
     email = db.Column(db.String(50), primary_key=True)
-    admin = db.Column(db.Boolean, index=False, unique=False, nullable=False, server_default='true', default=True)
+    admin = db.Column(db.Boolean, index=False, unique=False, nullable=False, server_default='false', default=False)
     games = db.relationship('Game', backref='players', lazy=True)
     game_plays = db.relationship('GamePlay', backref='game_plays', lazy=True)
     ratings = db.relationship('Rating', backref='players', lazy=True)
@@ -73,6 +73,8 @@ class Game(db.Model):
     description = db.Column(db.Text, unique=False, nullable=False, default='', server_default='')
     preview_img = db.Column(db.String(27), index=False, unique=True, nullable=False)
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
+    has_reporting = db.Column(db.Boolean, index=False, unique=False,
+                              nullable=False, server_default='true', default=True)
     plays = db.relationship('GamePlay', backref='plays', lazy=True, cascade="all, delete")
     ratings = db.relationship('Rating', backref='ratings', lazy=False, cascade="all, delete")
 
@@ -100,6 +102,15 @@ class Game(db.Model):
         folder = Path(os.environ.get('UPLOAD_PATH', Path(__file__).parent.joinpath('uploads')))
         name = secure_filename(f'{self.name}-{self.id}')
         return folder.joinpath(name)
+
+    @property
+    def py_game_path(self) -> Union[Path, None]:
+        target_dir = self.project_path
+        if target_dir.joinpath('game.py').exists():
+            target = target_dir.joinpath('game.py')
+        else:
+            target = next(target_dir.glob('*.py'), None)
+        return target
 
     @property
     def is_available(self) -> Path:
