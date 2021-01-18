@@ -136,6 +136,7 @@ def __check_running_state():
 ''',
             new_text
         )
+        new_text = f'{new_text}\n\n{var_name}.wait()'
         with open(file, 'w') as f:
             f.write(new_text)
     else:
