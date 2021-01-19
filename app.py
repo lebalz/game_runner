@@ -47,6 +47,7 @@ GREP_REGEX = re.compile(r'\bgrep\b')
 ANONYMOUS_EMAIL = 'anonymous@foo.bar'
 MAX_CONCURRENT_PLAYS = 15  # overwritten by env when present
 STATUS_INTERVAL = 15    # all <STATUS_INTERVAL> seconds a get request is sent to /status
+RECONNECT_INTERVAL = 15    # all <RECONNECT_INTERVAL> minutes a post request is sent to /reconnect
 HAS_REPORT_REGEX = re.compile(r'\.report\(')
 
 # important to import models AFTER initializing the app! Otherwise
@@ -93,6 +94,21 @@ sched.add_job(check_gamerunner_status, 'interval', seconds=STATUS_INTERVAL)
 sched.start()
 # Shutdown your cron thread if the web process is stopped
 atexit.register(lambda: sched.shutdown(wait=False))
+
+
+def scheduled_reconnect():
+    res = requests.post(f'{get_host()}/api/v1/reconnect', json={'secret': os.environ.get('SECRET_KEY')})
+    if res.ok:
+        log('app:status', 'reconnected')
+    else:
+        log('app:status', 'failed to reconnect')
+
+
+reconn_sched = BackgroundScheduler(daemon=True)
+reconn_sched.add_job(scheduled_reconnect, 'interval', minutes=RECONNECT_INTERVAL)
+reconn_sched.start()
+# Shutdown your cron thread if the web process is stopped
+atexit.register(lambda: reconn_sched.shutdown(wait=False))
 
 
 @app.context_processor
@@ -146,16 +162,13 @@ def is_process_running(pid: Union[str, int]) -> bool:
 
 
 def kill_game(device_id: str, force: bool = False, commit: bool = True):
-    log('app:kill', 'start killing', device_id)
     ps = play_session(device_id)
     home = root.joinpath('running_games')
     if not force and not home.joinpath(f'{device_id}.py').exists():
         return
     home.joinpath(f'{device_id}.kill').touch()
-    log('app:kill', 'touch killer', device_id)
 
     if ps and not ps.end_time:
-        log('app:kill', 'end session', device_id)
         ps.end_time = dt.now()
         if commit:
             db.session.commit()
@@ -171,7 +184,7 @@ def on_client_devices(devices: List[Device]):
     active_clients.update(new_clients)
 
     removed_scripts = active_scripts - scripts
-    new_scripts = scripts - active_clients
+    new_scripts = scripts - active_scripts
     active_scripts.update(new_scripts)
 
     for rm in removed_clients:
@@ -561,10 +574,9 @@ def upload_game():
         if db_game.py_game_path:
             with open(db_game.py_game_path, 'r') as f:
                 raw = f.read()
-                if HAS_REPORT_REGEX.search(raw):
-                    db_game.has_reporting = True
-                else:
+                if not HAS_REPORT_REGEX.search(raw):
                     db_game.has_reporting = False
+                    db.session.commit()
         else:
             db.session.delete(db_game)
             db.session.commit()
