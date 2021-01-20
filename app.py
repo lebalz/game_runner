@@ -557,14 +557,14 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
 
 @app.route('/upload_game', methods=['GET', 'POST'])
 def upload_game():
-    # user = current_player()
-    user = anonymous_player()
+    user = current_player()
+    # user = anonymous_player()
     if not user:
         return redirect(url_for("login"))
 
     if request.method == 'POST':
-        player = anonymous_player()
-        # player = current_player()
+        # player = anonymous_player()
+        player = current_player()
         name = request.form.get('name')[:32]
         game = request.files.get('game')
         description = request.form.get('description')
