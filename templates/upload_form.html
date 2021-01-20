@@ -1,65 +1,120 @@
 {% extends 'base.html' %} {% block body %}
 <div class="container">
   <form method="POST" action="/upload_game" enctype="multipart/form-data">
-    <div class="mb-3">
-      <label for="name" class="form-label">Game Name</label>
-      <input
-        type="text"
-        class="form-control"
-        id="name"
-        name="name"
-        aria-describedby="nameHelp"
-        maxlength="32"
-        minlength="2"
-        placeholder="Game"
-        required
-      />
-      <div id="nameHelp" class="form-text">Name of your Game Project.</div>
-    </div>
-    <div class="mb-3">
-      <label for="authors" class="form-label">Authors</label>
-      <input
-        type="text"
-        class="form-control"
-        id="authors"
-        name="authors"
-        aria-describedby="authorsHelp"
-        maxlength="64"
-        minlength="2"
-        placeholder="Your Cool Teamname"
-        required
-      />
-      <div id="authorsHelp" class="form-text">Name of the Game Programmers</div>
-    </div>
-    <div class="mb-3">
-      <label for="description" class="form-label">Description</label>
-      <textarea
-        type="text"
-        class="form-control"
-        id="description"
-        name="description"
-        aria-describedby="descriptionHelp"
-        placeholder="Short Description"
-        maxlength="1024"
-        required
-      ></textarea>
-      <div id="descriptionHelp" class="form-text">
-        A short description how to play the game and what the goal of your game
-        is (some #hashtags might be enough).
+    <fieldset>
+      <legend>Game Details</legend>
+      <div class="mb-3">
+        <label for="name" class="form-label">Game Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="name"
+          name="name"
+          aria-describedby="nameHelp"
+          maxlength="32"
+          minlength="2"
+          placeholder="Game"
+          required
+        />
+        <div id="nameHelp" class="form-text">Name of your Game Project.</div>
       </div>
-    </div>
-    <div>
-      <label for="game" class="form-label">Game (.zip or .py)</label>
-      <input
-        class="form-control"
-        id="game"
-        type="file"
-        name="game"
-        aria-describedby="gameHelp"
-        accept=".zip,.py"
-        required
-      />
-    </div>
+      <div class="mb-3">
+        <label for="authors" class="form-label">Authors</label>
+        <input
+          type="text"
+          class="form-control"
+          id="authors"
+          name="authors"
+          aria-describedby="authorsHelp"
+          maxlength="64"
+          minlength="2"
+          placeholder="Your Cool Teamname"
+          required
+        />
+        <div id="authorsHelp" class="form-text">
+          Name of the Game Programmers
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea
+          type="text"
+          class="form-control"
+          id="description"
+          name="description"
+          aria-describedby="descriptionHelp"
+          placeholder="Short Description"
+          maxlength="1024"
+          required
+        ></textarea>
+        <div id="descriptionHelp" class="form-text">
+          A short description how to play the game and what the goal of your
+          game is (some #hashtags might be enough).
+        </div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Supported Game Options</legend>
+      <div
+        class="btn-group"
+        role="group"
+        aria-label="Basic checkbox toggle button group"
+      >
+        <input
+          class="btn-check"
+          type="checkbox"
+          id="supports_acc"
+          checked
+          name="supports_acc"
+        />
+        <label class="btn btn-outline-primary" for="supports_acc"
+          >Accelerometer</label
+        >
+        <input
+          class="btn-check"
+          type="checkbox"
+          id="supports_key"
+          checked
+          name="supports_key"
+        />
+        <label class="btn btn-outline-primary" for="supports_key"
+          >Keyboard</label
+        >
+        <input
+          class="btn-check"
+          type="checkbox"
+          id="supports_touch"
+          name="supports_touch"
+        />
+        <label class="btn btn-outline-primary" for="supports_touch"
+          >Touchcontrol</label
+        >
+        <input
+          class="btn-check"
+          type="checkbox"
+          id="supports_gyro"
+          name="supports_gyro"
+        />
+        <label class="btn btn-outline-primary" for="supports_gyro"
+          >Gyrometer</label
+        >
+      </div>
+    </fieldset>
+    <br />
+    <fieldset>
+      <div>
+        <label for="game" class="form-label">Game (.zip or .py)</label>
+        <input
+          class="form-control"
+          id="game"
+          type="file"
+          name="game"
+          aria-describedby="gameHelp"
+          accept=".zip,.py"
+          required
+        />
+      </div>
+    </fieldset>
     <button type="submit" class="btn btn-primary">Upload</button>
   </form>
 </div>

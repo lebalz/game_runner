@@ -75,16 +75,38 @@ class Game(db.Model):
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
     has_reporting = db.Column(db.Boolean, index=False, unique=False,
                               nullable=False, server_default='true', default=True)
+    supports_acc = db.Column(db.Boolean, index=False, unique=False,
+                             nullable=False, server_default='true', default=True)
+    supports_key = db.Column(db.Boolean, index=False, unique=False,
+                             nullable=False, server_default='true', default=True)
+    supports_gyro = db.Column(db.Boolean, index=False, unique=False,
+                              nullable=False, server_default='true', default=True)
+    supports_touch = db.Column(db.Boolean, index=False, unique=False,
+                               nullable=False, server_default='true', default=True)
     plays = db.relationship('GamePlay', backref='plays', lazy=True, cascade="all, delete")
     ratings = db.relationship('Rating', backref='ratings', lazy=False, cascade="all, delete")
 
-    def __init__(self, player: Player, name: str, authors: str, description: str):
+    def __init__(
+            self,
+            player: Player,
+            name: str,
+            authors: str,
+            description: str,
+            supports_acc: bool,
+            supports_key: bool,
+            supports_gyro: bool,
+            supports_touch: bool,
+            ):
         self.name = name
         self.authors = authors
         self.player_email = player.email
         self.created = dt.now()
         self.preview_img = f'preview-{time.time_ns()}'
         self.description = description
+        self.supports_acc = supports_acc == 'on'
+        self.supports_key = supports_key == 'on'
+        self.supports_gyro = supports_gyro == 'on'
+        self.supports_touch = supports_touch == 'on'
 
     def __repr__(self):
         return '<email {}>'.format(self.email)
