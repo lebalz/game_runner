@@ -25,7 +25,7 @@
         class="{{'bg-warning' if loop.index == 1 else ''}}  {{'table-primary' if user and play['player_email'] == user.email else ''}}"
       >
         <td>{{loop.index}}</td>
-        <td>{{mail2name(play['player_email'])}}</td>
+        <td>{{mail2name(play['player_email'], initial_letters='last')}}</td>
         <td>{{play['highscore']}}</td>
         <td>{{play['plays']}}</td>
         <td>{{play['play_time']}}</td>

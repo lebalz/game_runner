@@ -2,7 +2,7 @@ from rungame import create_game, extract_game, running_games
 import shutil
 import os
 import requests
-from typing import List, Union
+from typing import List, Literal, Union
 from flask import Flask, request, render_template, redirect, session, url_for, json, jsonify
 from flask_migrate import Migrate
 from datetime import datetime as dt, timedelta
@@ -129,7 +129,7 @@ def utility_processor():
             return 'magic.42@work.ch'
         return mail
 
-    def mail2name(mail: str) -> str:
+    def mail2name(mail: str, initial_letters: Literal['both', 'last', 'first', None] = None) -> str:
         mail = mail_of(mail)
         if '@' not in mail:
             return mail
@@ -137,6 +137,12 @@ def utility_processor():
         if '.' not in name:
             return name
         first_name, last_name = name.split('.')
+        if initial_letters == 'both':
+            return f'{first_name[0]}. {last_name[0]}.'.upper()
+        elif initial_letters == 'last':
+            return f'{first_name.capitalize()} {last_name[0].upper()}.'
+        elif initial_letters == 'first':
+            return f'{first_name[0].upper()}. {last_name.capitalize()}'
         return f'{first_name.capitalize()} {last_name.capitalize()}'
 
     return dict(
