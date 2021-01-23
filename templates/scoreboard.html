@@ -1,7 +1,8 @@
 {% extends 'base.html' %} {% block body %}
 <h1>Scoreboard {{game.name}}</h1>
-{% include 'game_details_component.html'%} {% include
-'scoreboard_component.html' %} {% if my_plays %}
+{% include 'game_details_component.html'%} {% with max_height='300px' if
+my_plays else None %} {% include 'scoreboard_component.html' %} {% endwith %} {%
+if my_plays %}
 <h1>My Plays</h1>
 <div class="table-responsive" style="max-height: 250px">
   <table class="table table-striped table-hover table-sm">
