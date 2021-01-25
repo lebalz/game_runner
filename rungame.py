@@ -12,7 +12,7 @@ from datetime import datetime as dt
 
 
 CONNECTOR_REGEX = re.compile(r'Connector\(.*?\)')
-CONNECTOR_NAME_REGEX = re.compile(r'(?P<indent>\s*)(?P<var_name>\b\S+\b)\s*=\s*Connector\(.*?\)')
+CONNECTOR_NAME_REGEX = re.compile(r'^(?P<indent>\s*)(?P<var_name>\b\S+\b)\s*=\s*Connector\(.*?\)', re.M)
 
 RUNNING_GAME_REGEX = re.compile(
     r'^(?P<pid>\d+).*?/app/\.heroku/python/bin/python3 /app/running_games/(?P<game>game-\d{19})\.py$')
@@ -130,7 +130,7 @@ def create_game(target: Path, device_id: str) -> Path:
 
 '''
         new_text = CONNECTOR_NAME_REGEX.sub(replacement, raw)
-        cancel_subscriptions_regex = re.compile(f'(?P<indent>\s*){var_name}.cancel_async_subscriptions\(\)')
+        cancel_subscriptions_regex = re.compile(f'^(?P<indent>\s*){var_name}.cancel_async_subscriptions\(\)', re.M)
 
         # \g<intdent> directly capture&inserts the matched ?P<indent>
         new_text = cancel_subscriptions_regex.sub(
