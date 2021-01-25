@@ -481,7 +481,12 @@ def request_player_login(game_id: int = -1):
     if 'flow' not in session:
         session["flow"] = _build_auth_code_flow(scopes=app.config['SCOPE'])
     playgame_id = f'game-{time.time_ns()}'
-    return render_template("request_player_login.html", auth_url=session["flow"]["auth_uri"], game_id=game_id, playgame_id=playgame_id)
+    resp = make_response(
+        render_template("request_player_login.html",
+                        auth_url=session["flow"]["auth_uri"], game_id=game_id, playgame_id=playgame_id)
+    )
+    resp.headers.set('Cache-Control', 'private, max-age=0, no-cache, no-store')
+    return resp
 
 
 def __play_game(game: Game, player: Player, playgame_id: str = None):
@@ -840,7 +845,7 @@ def authorized():
             db.session.commit()  # Commits all changes
         _save_cache(cache)
 
-        resp = make_response(home())
+        resp = make_response(redirect('/'))
         exp = result.get('id_token_claims')['exp']
         resp.set_cookie('jwt', result.get('id_token'), max_age=exp, secure=True, httponly=True, samesite='Lax')
         return resp
@@ -853,7 +858,7 @@ def authorized():
 @app.route("/logout")
 def logout():
     session.clear()  # Wipe out user and its token cache from session
-    res = make_response(home())
+    res = make_response(redirect('/'))
     res.set_cookie('jwt', '-', max_age=0, secure=True, httponly=True, samesite='Lax')
     return res
 
