@@ -22,7 +22,7 @@
     <tbody>
       {% for play in scoreboard %}
       <tr
-        class="{{'bg-warning' if loop.index == 1 else ''}}  {{'table-primary' if user and play['player_email'] == user.email else ''}}"
+        class="{{toggle_prop('bg-warning', loop.index == 1)}} {{toggle_prop('table-primary', user.is_registered and play['player_email'] == user.email)}}"
       >
         <td>{{loop.index}}</td>
         <td>{{mail2name(play['player_email'], initial_letters='last')}}</td>

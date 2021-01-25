@@ -25,10 +25,10 @@
         <span class="badge rounded-pill bg-secondary">{{game.num_ratings}}</span> <i class="far fa-thumbs-up"></i>
       </button>
       <ul class="dropdown-menu">
-        {% if user and user.can_rate(game.id) %} {% for i in range(5) %}
+        {% if user.is_registered and user.can_rate(game.id) %} {% for i in range(5) %}
         <li ontouchstart="on_vote(event, {{game.id}}, {{i + 1}})" onclick="on_vote(event, {{game.id}}, {{i + 1}})">
           <div
-            class="dropdown-item {{'active' if user.rating_score(game.id) == i + 1 else ''}}"
+            class="dropdown-item {{toggle_prop('active', user.rating_score(game.id) == i + 1)}}"
           >
             {% for s in range(i+1) %}
             <i class="fas fa-star" style="color: gold"></i>

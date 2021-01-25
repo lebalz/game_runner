@@ -74,7 +74,7 @@
               >
             </li>
             <div class="flex-fill"></div>
-            {% if user %} {% if user.admin %}
+            {% if user.is_registered %} {% if user.admin %}
             <li class="nav-item">
               <a
                 class="nav-link {{'active' if active == 'admin' else ''}}"

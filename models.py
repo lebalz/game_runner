@@ -41,6 +41,7 @@ class Player(db.Model):
     def rating(self, game_id: int):
         return next(filter(lambda r: r.game_id == game_id, self.ratings), None)
 
+    @property
     def is_registered(self) -> bool:
         return self.email != 'anonymous@foo.bar'
 

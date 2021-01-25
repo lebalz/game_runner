@@ -125,9 +125,6 @@ def load_user():
                 user = get_player(r['preferred_username'])
         except Exception:
             g.user = anonymous_player()
-            res = make_response(login())
-            res.set_cookie('jwt', '-', max_age=0, secure=True, httponly=True, samesite='Lax')
-            return res
 
     if user is None:
         user = anonymous_player()
@@ -291,7 +288,7 @@ def index():
 @app.route('/admin')
 def admin():
     user = current_player()
-    if not user or not user.admin:
+    if not user.admin:
         return redirect('/')
     running = running_games()
     game_plays = db.session.execute('''\
@@ -313,7 +310,7 @@ def admin():
 @app.route('/python_logs')
 def fetch_python_logs():
     user = current_player()
-    if not user or not user.admin:
+    if not user.admin:
         return app.response_class(response=json.dumps({}), status=200, mimetype='application/json')
     runlog = root.joinpath('run_state.log')
     if runlog.exists():
@@ -379,7 +376,7 @@ def fetch_running_games():
 @app.route('/api/v1/reconnect', methods=['POST'])
 def reconnect():
     user = current_player()
-    if user is None or not user.admin:
+    if not user.admin:
         content = request.get_json(silent=True)
         if content is None:
             return redirect('/')
@@ -439,7 +436,7 @@ def scoreboard():
         ORDER BY max(score) DESC
     ''', {'gid': game_id})
     player = current_player()
-    if player:
+    if player.is_registered:
         my_plays = db.session.execute(f'''\
             SELECT *, extract(epoch from (end_time-start_time)) / 60 as play_time
             FROM game_plays
@@ -490,7 +487,7 @@ def request_player_login(game_id: int = -1):
 def __play_game(game: Game, player: Player, playgame_id: str = None):
     if game is None or player is None:
         return
-    if player.email != ANONYMOUS_EMAIL:
+    if player.is_registered:
         running = player.running_games
         for run in running:
             _terminate_game(run.id)
@@ -540,7 +537,7 @@ def game(game_id: int = -1):
         return redirect('/index')
 
     player = current_player()
-    if not player:
+    if not player.is_registered:
         return redirect(f'/request_player_login/{game_id}')
     running = running_games()
     if len(running) >= max_concurrent_plays():
@@ -556,9 +553,7 @@ def play_session(device_id: str) -> Union[GamePlay, None]:
     return GamePlay.query.filter(GamePlay.id == device_id).first()
 
 
-def current_player() -> Union[Player, None]:
-    if g.user.email == ANONYMOUS_EMAIL:
-        return None
+def current_player() -> Player:
     return g.user
 
 
@@ -603,7 +598,7 @@ def get_game_play(device_id: str) -> Union[GamePlay, None]:
 def upload_game():
     user = current_player()
     # user = anonymous_player()
-    if not user:
+    if not user.is_registered:
         return redirect(url_for("login"))
 
     if request.method == 'POST':
@@ -649,7 +644,7 @@ def upload_game():
 @app.route('/update_game', methods=['GET', 'POST'])
 def update_game():
     user = current_player()
-    if not user:
+    if not user.is_registered:
         return redirect(url_for("login"))
 
     if request.method == 'POST':
@@ -704,7 +699,7 @@ def update_game():
 @app.route('/user', methods=['GET'])
 def user():
     user = current_player()
-    if user is None:
+    if not user.is_registered:
         return redirect('/')
     if user.admin:
         games = Game.ordered_by_rating()
@@ -716,7 +711,7 @@ def user():
 @app.route('/delete', methods=['POST'])
 def delete():
     user = current_player()
-    if not user:
+    if not user.is_registered:
         return redirect('/')
     game_id = request.form.get('id')
     game = get_game(game_id)
@@ -761,7 +756,7 @@ def game_vote():
     game_id = request.form.get('game_id')
     new_rating = request.form.get('rating')
     game = get_game(game_id)
-    if user is None or game is None:
+    if game is None or not user.is_registered:
         return app.response_class(status=403, response=json.dumps({'status': 'login first'}), mimetype='application/json')
 
     rating = user.rating(game.id)
@@ -801,9 +796,7 @@ def terminate_game():
     if len(str(game_play_id)) != 24 or not str(game_play_id).startswith('game-16'):
         return app.response_class(status=200, response=json.dumps({'status': 'invalid request'}), mimetype='application/json')
     user = current_player()
-    if user is None:
-        user = anonymous_player()
-    if user is None:
+    if not user.is_registered:
         return app.response_class(status=200, response=json.dumps({'status': 'unauthorized'}), mimetype='application/json')
     if not user.admin:
         running = list(map(lambda proc: proc['game_play_id'], running_games()))
