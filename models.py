@@ -1,5 +1,5 @@
 from typing import Literal, Union
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, asc, nullslast
 from sqlalchemy.sql import func as func_t
 from app import db
 from datetime import datetime as dt
@@ -103,21 +103,35 @@ class Game(db.Model):
         self.created = dt.now()
         self.preview_img = f'preview-{time.time_ns()}'
         self.description = description
-        self.supports_acc = supports_acc == 'on'
-        self.supports_key = supports_key == 'on'
-        self.supports_gyro = supports_gyro == 'on'
-        self.supports_touch = supports_touch == 'on'
+        self.supports_acc = supports_acc
+        self.supports_key = supports_key
+        self.supports_gyro = supports_gyro
+        self.supports_touch = supports_touch
 
     def __repr__(self):
         return '<email {}>'.format(self.email)
 
     def ordered_by_rating(limit: int = None, direction: Literal['asc', 'desc'] = 'desc'):
-        query = Game.query.join(Rating, Rating.game_id == Game.id, isouter=True)\
+        query = Game.query\
+            .join(Rating, Rating.game_id == Game.id, isouter=True)\
+            .join(GamePlay, GamePlay.game_id == Game.id, isouter=True)\
             .group_by(Game.id)\
-            .order_by(desc(func.avg(Rating.rating)))
+            .order_by(nullslast(desc(func.avg(Rating.rating))), nullslast(desc(func.count(GamePlay.id))), asc(Game.created))
         if limit is not None:
             query = query.limit(limit)
         return query
+
+    def rename(self, new_name: str):
+        name = new_name
+        new_name = secure_filename(new_name)
+        project_name = f'{new_name}-{self.id}'
+        if self.project_path and self.project_path.exists():
+            self.project_path.rename(self.project_path.parent.joinpath(project_name))
+        prev_path = root.joinpath('static', 'previews', secure_filename(self.name))
+        if prev_path.exists():
+            prev_path.rename(prev_path.parent.joinpath(new_name))
+        self.name = name
+        db.session.commit()
 
     @property
     def project_path(self) -> Path:
@@ -162,6 +176,14 @@ class Game(db.Model):
         for p in static_path.iterdir():
             if p.name.startswith(self.preview_img):
                 return p
+
+    @property
+    def raw_code(self):
+        code_dir = self.py_game_path
+        if code_dir and code_dir.exists() and code_dir.is_file():
+            with open(code_dir, 'r') as f:
+                return f.read()
+        return '!! no code found !!'
 
     @property
     def preview_img_url(self) -> Union[str, None]:

@@ -1,6 +1,7 @@
 {% extends 'base.html' %} {% block body %}
 <div class="container">
-  <form method="POST" action="/upload_game" enctype="multipart/form-data">
+  <form method="POST" action="/update_game" enctype="multipart/form-data">
+    <input type="hidden" name="game_id" value="{{game.id}}" />
     <fieldset>
       <legend>Game Details</legend>
       <div class="mb-3">
@@ -14,6 +15,7 @@
           maxlength="32"
           minlength="2"
           placeholder="Game"
+          value="{{ game.name }}"
           required
         />
         <div id="nameHelp" class="form-text">Name of your Game Project.</div>
@@ -30,6 +32,7 @@
           minlength="2"
           placeholder="Your Cool Teamname"
           required
+          value="{{ game.authors }}"
         />
         <div id="authorsHelp" class="form-text">
           Name of the Game Programmers
@@ -46,7 +49,9 @@
           placeholder="Short Description"
           maxlength="1024"
           required
-        ></textarea>
+        >
+{{game.description}}</textarea
+        >
         <div id="descriptionHelp" class="form-text">
           A short description how to play the game and what the goal of your
           game is (some #hashtags might be enough).
@@ -64,7 +69,7 @@
           class="btn-check"
           type="checkbox"
           id="supports_acc"
-          checked
+          {{checked(game.supports_acc)}}
           name="supports_acc"
         />
         <label class="btn btn-outline-primary" for="supports_acc"
@@ -74,7 +79,7 @@
           class="btn-check"
           type="checkbox"
           id="supports_key"
-          checked
+          {{checked(game.supports_key)}}
           name="supports_key"
         />
         <label class="btn btn-outline-primary" for="supports_key"
@@ -85,6 +90,7 @@
           type="checkbox"
           id="supports_touch"
           name="supports_touch"
+          {{checked(game.supports_touch)}}
         />
         <label class="btn btn-outline-primary" for="supports_touch"
           >Touchcontrol</label
@@ -94,6 +100,7 @@
           type="checkbox"
           id="supports_gyro"
           name="supports_gyro"
+          {{checked(game.supports_gyro)}}
         />
         <label class="btn btn-outline-primary" for="supports_gyro"
           >Gyrometer</label
@@ -102,6 +109,7 @@
     </fieldset>
     <br />
     <fieldset>
+      <img width="200" src="{{game.preview_img_url}}" />
       <div>
         <label for="preview" class="form-label">Preview Image</label>
         <input
@@ -114,6 +122,9 @@
         />
       </div>
     </fieldset>
+    <pre
+      style="max-height: 300px; overflow: auto"
+    ><code style="font-family: monospace; line-height: 0.8rem;">{{game.raw_code}}</code></pre>
     <fieldset>
       <div>
         <label for="game" class="form-label">Game (.zip or .py)</label>
@@ -124,11 +135,10 @@
           name="game"
           aria-describedby="gameHelp"
           accept=".zip,.py"
-          required
         />
       </div>
     </fieldset>
-    <button type="submit" class="btn btn-primary">Upload</button>
+    <button type="submit" class="btn btn-primary">Save</button>
   </form>
 </div>
 {% endblock %}

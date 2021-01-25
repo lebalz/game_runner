@@ -80,16 +80,21 @@ def extract_game(project_path: Path, game: Any, preview_name: str):
     game : file from multipart form
         e.g. request.files.get('game')
     '''
-    if project_path.exists() and project_path.is_dir():
-        shutil.rmtree(project_path)
     is_zip = game.filename.endswith('.zip')
     if is_zip:
+        if project_path.exists() and project_path.is_dir():
+            shutil.rmtree(project_path)
         to = project_path.parent.joinpath(f'{project_path.name}.zip')
         game.save(to)
         unzip(to, preview_name)
     else:
         to = project_path.joinpath(game.filename)
         project_path.mkdir(exist_ok=True)
+        # remove all existing python files
+        for f in project_path.iterdir():
+            if f.name.endswith('.py') and f.is_file():
+                os.remove(f)
+
         game.save(to)
 
 
@@ -102,27 +107,26 @@ def create_game(target: Path, device_id: str) -> Path:
 
     match = CONNECTOR_NAME_REGEX.search(raw)
     if match:
-        indent = match['indent']
         var_name = match['var_name']
         replacement = f'''
-from pathlib import Path
-import os
-with open('/home/{game_runner()}/{device_id}.kill.pid', 'w') as f:
-    f.write(str(os.getpid()))
-{indent}{var_name} = Connector("https://io.gbsl.website", "{device_id}")
-{indent}{var_name}.sleep(0.2) # add some time to connect in case of an error later in the script
-def __shutdown():
-    {var_name}.disconnect()
-    exit()
+\g<indent>from pathlib import Path
+\g<indent>import os
+\g<indent>with open('/home/{game_runner()}/{device_id}.kill.pid', 'w') as f:
+\g<indent>    f.write(str(os.getpid()))
+\g<indent>{var_name} = Connector("https://io.gbsl.website", "{device_id}")
+\g<indent>{var_name}.sleep(0.2) # add some time to connect in case of an error later in the script
+\g<indent>def __shutdown():
+\g<indent>    {var_name}.disconnect()
+\g<indent>    exit()
+\g<indent>
+\g<indent>def __check_running_state():
+\g<indent>    try:
+\g<indent>        if Path(__file__).parent.joinpath('{device_id}.kill').exists():
+\g<indent>            __shutdown()
+\g<indent>    except:
+\g<indent>        __shutdown()
 
-def __check_running_state():
-    try:
-        if Path(__file__).parent.joinpath('{device_id}.kill').exists():
-            __shutdown()
-    except:
-        __shutdown()
-
-{var_name}.subscribe_async(__check_running_state, 1)
+\g<indent>{var_name}.subscribe_async(__check_running_state, 1)
 
 '''
         new_text = CONNECTOR_NAME_REGEX.sub(replacement, raw)
@@ -136,7 +140,8 @@ def __check_running_state():
 ''',
             new_text
         )
-        new_text = f'{new_text}\n\n{var_name}.wait()'
+        if not var_name.startswith('self.'):
+            new_text = f'{new_text}\n\n{var_name}.wait()'
         with open(file, 'w') as f:
             f.write(new_text)
     else:

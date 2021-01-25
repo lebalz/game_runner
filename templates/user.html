@@ -10,6 +10,7 @@
         <th scope="col">Author</th>
         <th scope="col">Erstellt am</th>
         <th scope="col">Spielen</th>
+        <th scope="col">Updaten</th>
         <th scope="col">Löschen</th>
       </tr>
     </thead>
@@ -21,9 +22,14 @@
         <td>{{game.created}}</td>
         <td><a href="/game/{{game.id}}">Spielen</a></td>
         <td>
+          <a href="/update_game?game_id={{game.id}}" class="btn btn-primary">
+            <i class="fas fa-edit"></i
+          ></a>
+        </td>
+        <td>
           <form action="/delete" method="POST">
             <input type="hidden" name="id" value="{{game.id}}" />
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-danger" {{toggle_prop('disabled', on=(not user.admin))}}>
               <i class="fas fa-trash"></i>
             </button>
           </form>

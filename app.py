@@ -1,11 +1,12 @@
+from flask.helpers import make_response
 from rungame import create_game, extract_game, running_games
 import shutil
 import os
 import requests
 from typing import List, Literal, Union
-from flask import Flask, request, render_template, redirect, session, url_for, json, jsonify
+from flask import Flask, request, render_template, redirect, session, url_for, json, jsonify, g
 from flask_migrate import Migrate
-from datetime import datetime as dt, timedelta
+from datetime import datetime as dt
 from pathlib import Path
 import time
 import re
@@ -18,6 +19,7 @@ from smartphone_connector import Connector
 from smartphone_connector.types import DataMsg, Device
 from sqlalchemy import desc, func
 from dotenv import load_dotenv, find_dotenv
+from msal.oauth2cli.oidc import decode_id_token
 load_dotenv(find_dotenv())
 
 root = Path(__file__).parent
@@ -111,6 +113,27 @@ reconn_sched.start()
 atexit.register(lambda: reconn_sched.shutdown(wait=False))
 
 
+@app.before_request
+def load_user():
+    user = None
+    if not request.cookies.get('jwt'):
+        user = anonymous_player()
+    else:
+        try:
+            r = decode_id_token(request.cookies.get('jwt'))
+            if 'preferred_username' in r:
+                user = get_player(r['preferred_username'])
+        except Exception:
+            g.user = anonymous_player()
+            res = make_response(login())
+            res.set_cookie('jwt', '-', max_age=0, secure=True, httponly=True, samesite='Lax')
+            return res
+
+    if user is None:
+        user = anonymous_player()
+    g.user = user
+
+
 @app.context_processor
 def utility_processor():
 
@@ -123,6 +146,16 @@ def utility_processor():
             obfuscated = list(sanitized)
 
         return obfuscated
+
+    def checked(is_checked: bool) -> str:
+        if is_checked:
+            return 'checked'
+        return ''
+
+    def toggle_prop(prop: str, on: bool) -> str:
+        if on:
+            return prop
+        return ''
 
     def mail_of(mail: str) -> str:
         if mail in obfuscated_players():
@@ -150,6 +183,8 @@ def utility_processor():
         mail_of=mail_of,
         user=current_player(),
         mail2name=mail2name,
+        checked=checked,
+        toggle_prop=toggle_prop,
         len=len
     )
 
@@ -243,7 +278,7 @@ def setup(force: bool = False):
 
 @app.route('/')
 def home():
-    games = Game.ordered_by_rating(limit=18)
+    games = Game.ordered_by_rating()
     return render_template('home.html', active='home', games=games)
 
 
@@ -522,12 +557,9 @@ def play_session(device_id: str) -> Union[GamePlay, None]:
 
 
 def current_player() -> Union[Player, None]:
-    email = session.get('email')
-    if not email:
+    if g.user.email == ANONYMOUS_EMAIL:
         return None
-    return Player.query.filter(
-            Player.email == email
-    ).first()
+    return g.user
 
 
 def latest_log_message(type: str) -> Union[LogMessage, None]:
@@ -547,6 +579,12 @@ def anonymous_player() -> Union[Player, None]:
     db.session.add(player)
     db.session.commit()
     return player
+
+
+def get_player(email: str) -> Union[Player, None]:
+    return Player.query.filter(
+            Player.email == email.lower()
+    ).first()
 
 
 def get_game(id: int) -> Union[Game, None]:
@@ -569,17 +607,15 @@ def upload_game():
         return redirect(url_for("login"))
 
     if request.method == 'POST':
-        # player = anonymous_player()
-        player = current_player()
         name = request.form.get('name')[:32]
         game = request.files.get('game')
         description = request.form.get('description')
-        supports_acc = request.form.get('supports_acc')
-        supports_key = request.form.get('supports_key')
-        supports_gyro = request.form.get('supports_gyro')
-        supports_touch = request.form.get('supports_touch')
+        supports_acc = request.form.get('supports_acc') == 'on'
+        supports_key = request.form.get('supports_key') == 'on'
+        supports_gyro = request.form.get('supports_gyro') == 'on'
+        supports_touch = request.form.get('supports_touch') == 'on'
         authors = request.form.get('authors')[:64]
-        db_game = Game(player, name, authors,
+        db_game = Game(user, name, authors,
                        description,
                        supports_acc,
                        supports_key,
@@ -588,6 +624,13 @@ def upload_game():
         db.session.add(db_game)
         db.session.commit()
         extract_game(db_game.project_path, game, db_game.preview_img)
+        if request.files.get('preview'):
+            if not db_game.static_folder.exists():
+                db_game.static_folder.mkdir(parents=True, exist_ok=True)
+            if db_game.static_folder.joinpath(db_game.preview_img).exists():
+                os.remove(db_game.static_folder.joinpath(db_game.preview_img))
+            preview = request.files.get('preview')
+            preview.save(db_game.static_folder.joinpath(f'{db_game.preview_img}{Path(preview.filename).suffix}'))
         if db_game.py_game_path:
             with open(db_game.py_game_path, 'r') as f:
                 raw = f.read()
@@ -597,10 +640,65 @@ def upload_game():
         else:
             db.session.delete(db_game)
             db.session.commit()
-
-        return redirect('/index')
+            return redirect('/index')
+        return redirect(f'/scoreboard?game_id={db_game.id}')
     else:
         return render_template('upload_form.html', active='upload_game')
+
+
+@app.route('/update_game', methods=['GET', 'POST'])
+def update_game():
+    user = current_player()
+    if not user:
+        return redirect(url_for("login"))
+
+    if request.method == 'POST':
+        game_id = request.form.get('game_id', type=int)
+        to_update = get_game(game_id)
+        if not to_update:
+            return redirect('/index')
+        if to_update.player_email != user.email:
+            if not user.admin:
+                return redirect('/index')
+
+        if to_update.name != request.form.get('name')[:32]:
+            to_update.rename(request.form.get('name')[:32])
+        to_update.description = request.form.get('description')
+        to_update.supports_acc = request.form.get('supports_acc') == 'on'
+        to_update.supports_key = request.form.get('supports_key') == 'on'
+        to_update.supports_gyro = request.form.get('supports_gyro') == 'on'
+        to_update.supports_touch = request.form.get('supports_touch') == 'on'
+        to_update.authors = request.form.get('authors')[:64]
+        game = request.files.get('game')
+        if game:
+            extract_game(to_update.project_path, game, to_update.preview_img)
+        if request.files.get('preview'):
+            if not to_update.static_folder.exists():
+                to_update.static_folder.mkdir(parents=True, exist_ok=True)
+            for f in to_update.static_folder.iterdir():
+                if f.name.startswith(to_update.preview_img):
+                    os.remove(f)
+            preview = request.files.get('preview')
+            preview.save(to_update.static_folder.joinpath(f'{to_update.preview_img}{Path(preview.filename).suffix}'))
+        if to_update.py_game_path:
+            with open(to_update.py_game_path, 'r') as f:
+                raw = f.read()
+                if not HAS_REPORT_REGEX.search(raw):
+                    to_update.has_reporting = False
+                    db.session.commit()
+            db.session.commit()
+        return redirect(f'/scoreboard?game_id={to_update.id}')
+
+    else:
+        game_id = request.args.get('game_id', type=int)
+        to_update = get_game(game_id)
+        if not to_update:
+            return redirect('/index')
+        if to_update.player_email != user.email:
+            if not user.admin:
+                return redirect('/index')
+
+        return render_template('update_form.html', game=to_update)
 
 
 @app.route('/user', methods=['GET'])
@@ -748,17 +846,23 @@ def authorized():
             db.session.add(new_player)  # Adds new User record to database
             db.session.commit()  # Commits all changes
         _save_cache(cache)
+
+        resp = make_response(home())
+        exp = result.get('id_token_claims')['exp']
+        resp.set_cookie('jwt', result.get('id_token'), max_age=exp, secure=True, httponly=True, samesite='Lax')
+        return resp
     except ValueError:  # Usually caused by CSRF
         pass  # Simply ignore them
+
     return redirect('/')
 
 
 @app.route("/logout")
 def logout():
     session.clear()  # Wipe out user and its token cache from session
-    return redirect(  # Also logout from your tenant's web session
-        app.config['AUTHORITY'] + "/oauth2/v2.0/logout" +
-        "?post_logout_redirect_uri=" + url_for("index", _external=True))
+    res = make_response(home())
+    res.set_cookie('jwt', '-', max_age=0, secure=True, httponly=True, samesite='Lax')
+    return res
 
 
 def _load_cache():
@@ -771,6 +875,9 @@ def _load_cache():
 def _save_cache(cache):
     if cache.has_state_changed:
         session["token_cache"] = cache.serialize()
+        root.joinpath('msal_token_cache.bin').touch(exist_ok=True)
+        with open(root.joinpath('msal_token_cache.bin'), 'w') as f:
+            f.write(cache.serialize())
 
 
 def _build_msal_app(cache=None, authority=None):
