@@ -25,7 +25,7 @@ load_dotenv(find_dotenv())
 root = Path(__file__).parent
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
-app.config['SQLALCHEMY_ECHO'] = True
+# app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -66,6 +66,7 @@ def log(type: str, msg: str, game_play_id: str = None, update_latest: bool = Fal
         if model is None:
             model = LogMessage(msg_type=type, msg=msg, game_play_id=game_play_id)
             db.session.add(model)
+        model.updated_at = dt.now()
         model.msg = msg
         model.game_play_id = game_play_id
         db.session.commit()

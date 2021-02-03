@@ -264,4 +264,6 @@ class LogMessage(db.Model):
     def __init__(self, msg_type: str, msg: str, game_play_id: str = None):
         self.msg = msg
         self.msg_type = msg_type
+        self.created_at = dt.now()
+        self.updated_at = dt.now()
         self.game_play_id = game_play_id
