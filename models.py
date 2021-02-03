@@ -20,11 +20,12 @@ class Player(db.Model):
     game_plays = db.relationship('GamePlay', backref='game_plays', lazy=True)
     ratings = db.relationship('Rating', backref='players', lazy=True)
 
-    created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
+    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False,
+                           server_default=func_t.now(), onupdate=func_t.now())
 
     def __init__(self, email):
         self.email = email
-        self.created = dt.now()
         self.admin = False
 
     def __repr__(self):
@@ -70,7 +71,9 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32), index=True, unique=False, nullable=False)
     authors = db.Column(db.String(64), index=False, unique=False, nullable=False)
-    created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
+    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False,
+                           server_default=func_t.now(), onupdate=func_t.now())
     description = db.Column(db.Text, unique=False, nullable=False, default='', server_default='')
     preview_img = db.Column(db.String(27), index=False, unique=True, nullable=False)
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
@@ -101,7 +104,6 @@ class Game(db.Model):
         self.name = name
         self.authors = authors
         self.player_email = player.email
-        self.created = dt.now()
         self.preview_img = f'preview-{time.time_ns()}'
         self.description = description
         self.supports_acc = supports_acc
@@ -117,7 +119,7 @@ class Game(db.Model):
             .join(Rating, Rating.game_id == Game.id, isouter=True)\
             .join(GamePlay, GamePlay.game_id == Game.id, isouter=True)\
             .group_by(Game.id)\
-            .order_by(nullslast(desc(func.avg(Rating.rating))), nullslast(desc(func.count(GamePlay.id))), asc(Game.created))
+            .order_by(nullslast(desc(func.avg(Rating.rating))), nullslast(desc(func.count(GamePlay.id))), asc(Game.created_at))
         if limit is not None:
             query = query.limit(limit)
         return query
@@ -200,7 +202,9 @@ class GamePlay(db.Model):
     start_time = db.Column(db.DateTime, index=False, unique=False, nullable=False)
     end_time = db.Column(db.DateTime, index=False, unique=False, nullable=True)
     score = db.Column(db.Integer, index=False, unique=False, default=0)
-    created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
+    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False,
+                           server_default=func_t.now(), onupdate=func_t.now())
 
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
@@ -209,7 +213,6 @@ class GamePlay(db.Model):
         self.id = device_id
         self.player_email = player.email
         self.game_id = game.id
-        self.created = dt.now()
         self.start_time = dt.now()
 
     def __repr__(self):
@@ -234,14 +237,15 @@ class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     player_email = db.Column(db.String(50), db.ForeignKey('players.email'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
-    created = db.Column(db.DateTime, index=False, unique=False, nullable=False)
+    created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
+    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False,
+                           server_default=func_t.now(), onupdate=func_t.now())
     rating = db.Column(db.Integer, index=False, nullable=False)
 
     def __init__(self, player: Player, game: Game, rating: int):
         self.player_email = player.email
         self.game_id = game.id
         self.rating = rating
-        self.created = dt.now()
 
     def __repr__(self):
         return '<email {}>'.format(self.email)
@@ -251,7 +255,8 @@ class LogMessage(db.Model):
     __tablename__ = 'log_messages'
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
-    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False, server_default=func_t.now())
+    updated_at = db.Column(db.DateTime, index=False, unique=False, nullable=False,
+                           server_default=func_t.now(), onupdate=func_t.now())
     msg_type = db.Column(db.String(32), index=True, nullable=False)
     game_play_id = db.Column(db.String(24), index=False, nullable=True)
     msg = db.Column(db.String(256), index=False, nullable=False)
@@ -259,6 +264,4 @@ class LogMessage(db.Model):
     def __init__(self, msg_type: str, msg: str, game_play_id: str = None):
         self.msg = msg
         self.msg_type = msg_type
-        self.created_at = dt.now()
-        self.updated_at = dt.now()
         self.game_play_id = game_play_id

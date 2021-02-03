@@ -25,7 +25,7 @@ load_dotenv(find_dotenv())
 root = Path(__file__).parent
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
-# app.config['SQLALCHEMY_ECHO'] = True
+app.config['SQLALCHEMY_ECHO'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -66,7 +66,6 @@ def log(type: str, msg: str, game_play_id: str = None, update_latest: bool = Fal
         if model is None:
             model = LogMessage(msg_type=type, msg=msg, game_play_id=game_play_id)
             db.session.add(model)
-        model.updated_at = dt.now()
         model.msg = msg
         model.game_play_id = game_play_id
         db.session.commit()
@@ -303,7 +302,7 @@ def admin():
         ORDER BY game_plays.start_time DESC
         LIMIT 100
     ''')
-    users = Player.query.order_by(desc(Player.created)).all()
+    users = Player.query.order_by(desc(Player.created_at)).all()
     return render_template('admin.html', running_games=running, active='admin', users=users, game_plays=game_plays)
 
 
