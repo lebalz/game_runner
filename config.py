@@ -12,7 +12,9 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY', None)
     # 16MB upper limit
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+
+    # sanitize db url s.t. sqlalchemy understands it
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://')
 
     AUTHORITY = f"https://login.microsoftonline.com/{os.environ.get('TENANT_ID')}"
 
